@@ -15,7 +15,6 @@ namespace RestfulBookerTests.Steps
         private readonly HealthCheckClient _healthCheckClient;
 
         private RestResponse _pingResponse;
-        private long _pingElapsedMs;
 
         public HealthCheckSteps(ScenarioContext scenarioContext)
         {
@@ -27,26 +26,12 @@ namespace RestfulBookerTests.Steps
         [When(@"I send a ping request")]
         public async Task WhenISendAPingRequest()
         {
-            var healthClient = _scenarioContext.Get<HealthCheckClient>("HealthCheckClient");
-            (_pingResponse, _pingElapsedMs) = await healthClient.PingAsync();
+            var (_pingResponse, _pingElapsedMs) = await _healthCheckClient.PingAsync();
+
+            _scenarioContext["LastStatusCode"] = _pingResponse.StatusCode;
+            _scenarioContext["LastElapsedMs"] = _pingElapsedMs;
+        }
+
        
-            _logger.LogInformation("Ping returned {StatusCode} with content: {Content} in {ElapsedMs} ms", _pingResponse.StatusCode, _pingResponse.Content, _pingElapsedMs);
-        }
-
-        [Then(@"the response status code should be {int}")]
-        public void ThenTheResponseShouldBe200OK(int statusCode)
-        {
-            HttpStatusCode expectedHttpStatusCode = (HttpStatusCode)statusCode;
-            Assert.That(_pingResponse.StatusCode, Is.EqualTo(expectedHttpStatusCode), $"Expected {expectedHttpStatusCode}, but got {_pingResponse.StatusCode}");
-
-            _logger.LogInformation("Ping returned {ExpectedStatusCode} with content: {Content}", expectedHttpStatusCode, _pingResponse);
-        }
-
-        [Then(@"the response time should be less than {int} ms")]
-        public void ThenTheResponseTimeShouldBeUnder(int maxMilliseconds)
-        {
-            _logger.LogInformation("Ping response time: {Elapsed} ms (threshold: {Max} ms)", _pingElapsedMs, maxMilliseconds);
-            Assert.That(_pingElapsedMs <= maxMilliseconds, $"Performance test failed: {_pingElapsedMs} ms exceeds {maxMilliseconds} ms");
-        }
     }
 }

@@ -112,7 +112,7 @@ namespace RestfulBookerTests.Features
                     "noauth"};
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Healthcheck endpoint is available", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 5
+#line 6
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -122,14 +122,14 @@ namespace RestfulBookerTests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 6
+#line 7
     await testRunner.WhenAsync("I send a ping request", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 7
-    await testRunner.ThenAsync("the response status code should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
-#line hidden
 #line 8
-    await testRunner.AndAsync("the response time should be less than 1000 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.ThenAsync("the response status should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 9
+    await testRunner.AndAsync("the response time should be less than 500 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

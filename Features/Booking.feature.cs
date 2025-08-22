@@ -102,6 +102,34 @@ namespace RestfulBookerTests.Features
             await testRunner.CollectScenarioErrorsAsync();
         }
         
+        public virtual async global::System.Threading.Tasks.Task FeatureBackgroundAsync()
+        {
+#line 3
+#line hidden
+            global::Reqnroll.Table table1 = new global::Reqnroll.Table(new string[] {
+                        "firstname",
+                        "lastname",
+                        "totalprice",
+                        "depositpaid",
+                        "checkin",
+                        "checkout",
+                        "additionalneeds"});
+            table1.AddRow(new string[] {
+                        "John",
+                        "Doe",
+                        "150",
+                        "true",
+                        "2025-08-25",
+                        "2025-08-30",
+                        "Breakfast"});
+#line 4
+ await testRunner.GivenAsync("I have a booking with:", ((string)(null)), table1, "Given ");
+#line hidden
+#line 7
+ await testRunner.WhenAsync("I send a create booking request", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+        }
+        
         [NUnit.Framework.TestAttribute()]
         [NUnit.Framework.DescriptionAttribute("Create a new booking")]
         public async global::System.Threading.Tasks.Task CreateANewBooking()
@@ -109,8 +137,8 @@ namespace RestfulBookerTests.Features
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Create a new booking", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 2
-  this.ScenarioInitialize(scenarioInfo);
+#line 9
+this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
             {
@@ -120,16 +148,19 @@ namespace RestfulBookerTests.Features
             {
                 await this.ScenarioStartAsync();
 #line 3
-    await testRunner.GivenAsync("I have valid booking details", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+await this.FeatureBackgroundAsync();
 #line hidden
-#line 4
-    await testRunner.WhenAsync("I send a create booking request", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 10
+ await testRunner.ThenAsync("the response status should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 5
-    await testRunner.ThenAsync("the response status should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line 11
+ await testRunner.AndAsync("the response time should be less than 500 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 6
-    await testRunner.AndAsync("the booking ID should be returned", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 12
+ await testRunner.AndAsync("the booking ID should be returned", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 13
+ await testRunner.AndAsync("the booking details should match what I created", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -142,8 +173,8 @@ namespace RestfulBookerTests.Features
             string[] tagsOfScenario = ((string[])(null));
             global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Get booking by ID", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 8
-  this.ScenarioInitialize(scenarioInfo);
+#line 15
+this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
             {
@@ -152,20 +183,20 @@ namespace RestfulBookerTests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 9
-    await testRunner.GivenAsync("I have valid booking details", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line 3
+await this.FeatureBackgroundAsync();
 #line hidden
-#line 10
-    await testRunner.WhenAsync("I send a create booking request", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 16
+ await testRunner.WhenAsync("I send a get booking request for that ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 11
-    await testRunner.AndAsync("I send a get booking request for that ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 17
+ await testRunner.ThenAsync("the response status should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 12
-    await testRunner.ThenAsync("the response status should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line 18
+ await testRunner.AndAsync("the response time should be less than 500 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 13
-    await testRunner.AndAsync("the booking details should match what I created", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 19
+ await testRunner.AndAsync("the booking details should match what I created", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

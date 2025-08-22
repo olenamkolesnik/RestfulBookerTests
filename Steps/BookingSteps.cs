@@ -1,50 +1,57 @@
-﻿using Microsoft.Extensions.Logging;
-using Reqnroll;
+﻿using Reqnroll;
 using RestfulBookerTests.Clients;
 using RestfulBookerTests.Models;
+using System.Net;
 
 [Binding]
-public class BookingSteps
+public class BookingSteps(ScenarioContext scenarioContext)
 {
-    private readonly BookingClient _bookingClient;
-    private readonly ILogger _logger;
-    private Booking? _bookingPayload;
-    private BookingResponse? _createBookingResponse;
-    private Booking? _getBookingResponse;
-
-    public BookingSteps(ScenarioContext scenarioContext)
-    {
-        _bookingClient = scenarioContext["BookingClient"] as BookingClient
+    private readonly BookingClient _bookingClient = scenarioContext["BookingClient"] as BookingClient
             ?? throw new InvalidOperationException("BookingClient not found in ScenarioContext");
-        _logger = scenarioContext["Logger"] as ILogger
-            ?? throw new InvalidOperationException("Logger not found in ScenarioContext");
-    }
+    private Booking? _booking;
+    private BookingCreatedResponse? _createBookingResponse;
+    private Booking? _createdBooking;
 
-    [Given(@"I have valid booking details")]
-    public void GivenIHaveValidBookingDetails()
+    [Given("I have a booking with:")]
+    public void GivenIHaveABookingWith(Table table)
     {
-        _bookingPayload = new Booking
+        if (table.Rows.Count == 0)
+            throw new ArgumentException("The booking table must contain at least one row.");
+
+        var row = table.Rows[0];
+
+        _booking = new Booking
         {
-            Firstname = "John",
-            Lastname = "Doe",
-            Totalprice = 150,
-            Depositpaid = true,
+            Firstname = row["firstname"],
+            Lastname = row["lastname"],
+            Totalprice = int.Parse(row["totalprice"]),
+            Depositpaid = bool.Parse(row["depositpaid"]),
             Bookingdates = new BookingDates
             {
-                Checkin = "2025-09-01",
-                Checkout = "2025-09-10"
+                Checkin = row["checkin"],
+                Checkout = row["checkout"]
             },
-            Additionalneeds = "Breakfast"
+            Additionalneeds = row["additionalneeds"]
         };
     }
 
     [When(@"I send a create booking request")]
     public async Task WhenISendACreateBookingRequest()
     {
-        if (_bookingPayload == null)
+        if (_booking == null)
             throw new InvalidOperationException("Booking payload must be initialized before creating booking.");
 
-      //  _createBookingResponse = await _bookingClient.CreateBookingAsync(_bookingPayload);
+        (_createBookingResponse, _createdBooking, var _lastStatusCode, var _lastElapsedMs) =
+            await _bookingClient.CreateBookingAsync(_booking);
+
+        scenarioContext["LastStatusCode"] = _lastStatusCode;
+        scenarioContext["LastElapsedMs"] = _lastElapsedMs;
+    }
+
+    [Then(@"the booking ID should be returned")]
+    public void ThenTheBookingIdShouldBeReturned()
+    {
+        Assert.That(_createBookingResponse?.Bookingid ?? 0, Is.GreaterThan(0), "Booking ID should be greater than zero");
     }
 
     [When(@"I send a get booking request for that ID")]
@@ -53,41 +60,44 @@ public class BookingSteps
         if (_createBookingResponse == null)
             throw new InvalidOperationException("Booking creation response is null.");
 
-      //  _getBookingResponse = await _bookingClient.GetBookingAsync(_createBookingResponse.BookingId);
+        var (_getBookingResponse, _lastStatusCode, _lastElapsedMs) = await _bookingClient.GetBookingAsync(_createBookingResponse.Bookingid);
+
+        scenarioContext["LastStatusCode"] = _lastStatusCode;
+        scenarioContext["LastElapsedMs"] = _lastElapsedMs;
     }
 
     [Then(@"the response status should be (.*)")]
     public void ThenTheResponseStatusShouldBe(int expectedStatus)
     {
-        // You can check both creation and retrieval
-        int createStatus = _createBookingResponse != null ? 200 : 0; // RestSharp returns 200 if success
-        int getStatus = _getBookingResponse != null ? 200 : 0;
-
-        Assert.That(createStatus, Is.EqualTo(expectedStatus), "Unexpected creation status");
-        Assert.That(getStatus, Is.EqualTo(expectedStatus), "Unexpected retrieval status");
+        var _lastStatusCode = scenarioContext.Get<HttpStatusCode>("LastStatusCode");
+        var _lastElapsedMs = scenarioContext.Get<long>("LastElapsedMs");
+        Assert.That((int)_lastStatusCode, Is.EqualTo(expectedStatus), $"Expected status code {expectedStatus}, but got {(int)_lastStatusCode}");
     }
 
-    [Then(@"the booking ID should be returned")]
-    public void ThenTheBookingIdShouldBeReturned()
-    {
-        Assert.That(_createBookingResponse?.BookingId ?? 0, Is.GreaterThan(0), "Booking ID should be greater than zero");
-    }
 
     [Then(@"the booking details should match what I created")]
     public void ThenTheBookingDetailsShouldMatchWhatICreated()
     {
-        if (_bookingPayload == null || _getBookingResponse == null)
+        if (_booking == null || _createdBooking == null)
             throw new InvalidOperationException("Booking payload or retrieved booking is null.");
 
         Assert.Multiple(() =>
         {
-            Assert.That(_getBookingResponse.Firstname, Is.EqualTo(_bookingPayload.Firstname));
-            Assert.That(_getBookingResponse.Lastname, Is.EqualTo(_bookingPayload.Lastname));
-            Assert.That(_getBookingResponse.Totalprice, Is.EqualTo(_bookingPayload.Totalprice));
-            Assert.That(_getBookingResponse.Depositpaid, Is.EqualTo(_bookingPayload.Depositpaid));
-            Assert.That(_getBookingResponse.Bookingdates.Checkin, Is.EqualTo(_bookingPayload.Bookingdates.Checkin));
-            Assert.That(_getBookingResponse.Bookingdates.Checkout, Is.EqualTo(_bookingPayload.Bookingdates.Checkout));
-            Assert.That(_getBookingResponse.Additionalneeds, Is.EqualTo(_bookingPayload.Additionalneeds));
+            Assert.That(_createdBooking.Firstname, Is.EqualTo(_booking.Firstname));
+            Assert.That(_createdBooking.Lastname, Is.EqualTo(_booking.Lastname));
+            Assert.That(_createdBooking.Totalprice, Is.EqualTo(_booking.Totalprice));
+            Assert.That(_createdBooking.Depositpaid, Is.EqualTo(_booking.Depositpaid));
+            Assert.That(_createdBooking.Bookingdates.Checkin, Is.EqualTo(_booking.Bookingdates.Checkin));
+            Assert.That(_createdBooking.Bookingdates.Checkout, Is.EqualTo(_booking.Bookingdates.Checkout));
+            Assert.That(_createdBooking.Additionalneeds, Is.EqualTo(_booking.Additionalneeds));
         });
+    }
+
+    [Then(@"the response time should be less than {int} ms")]
+    public void ThenTheResponseTimeShouldBeUnder(int maxMilliseconds)
+    {
+        var _pingElapsedMs = scenarioContext.Get<long>("LastElapsedMs");        
+
+        Assert.That(_pingElapsedMs <= maxMilliseconds, $"Performance test failed: {_pingElapsedMs} ms exceeds {maxMilliseconds} ms");
     }
 }

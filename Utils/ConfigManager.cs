@@ -20,6 +20,9 @@ namespace RestfulBookerTests.Utils
         }
 
         public static string BaseUrl => _config["Api:BaseUrl"] ?? throw new InvalidOperationException("BaseUrl not configured.");
+        public static int MaxContentLength => _config.GetValue("Logging:MaxContentLength", 1000); 
+        public static bool DisableContentForAuth => _config.GetValue("Logging:DisableContentForAuth", true);
+        public static bool EnableDetailedLogging => _config.GetValue("Logging:EnableDetailedLogging", true);
         public static LogLevel LogLevel
         {
             get
