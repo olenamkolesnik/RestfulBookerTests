@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 
-namespace RestfulBookerTests.Hooks
+namespace RestfulBookerTests.Utils
 {
+    //TODO:delete???
     public static class LoggerProvider
     {
         public static ILogger CreateLogger(string categoryName, string logLevel)

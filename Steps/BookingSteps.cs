@@ -44,7 +44,7 @@ public class BookingSteps
         if (_bookingPayload == null)
             throw new InvalidOperationException("Booking payload must be initialized before creating booking.");
 
-        _createBookingResponse = await _bookingClient.CreateBookingAsync(_bookingPayload);
+      //  _createBookingResponse = await _bookingClient.CreateBookingAsync(_bookingPayload);
     }
 
     [When(@"I send a get booking request for that ID")]
@@ -53,7 +53,7 @@ public class BookingSteps
         if (_createBookingResponse == null)
             throw new InvalidOperationException("Booking creation response is null.");
 
-        _getBookingResponse = await _bookingClient.GetBookingAsync(_createBookingResponse.BookingId);
+      //  _getBookingResponse = await _bookingClient.GetBookingAsync(_createBookingResponse.BookingId);
     }
 
     [Then(@"the response status should be (.*)")]

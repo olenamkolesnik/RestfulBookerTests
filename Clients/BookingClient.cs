@@ -1,69 +1,70 @@
 ﻿using Microsoft.Extensions.Logging;
-using RestSharp;
 using RestfulBookerTests.Helpers;
 using RestfulBookerTests.Models;
-using System.Threading.Tasks;
+using RestSharp;
+using System.Net;
 
 namespace RestfulBookerTests.Clients
 {
     public class BookingClient : BaseClient
     {
-        public BookingClient(string baseUrl, ILogger logger) : base(baseUrl, logger)
+        public BookingClient(string baseUrl, ILogger logger) : base(baseUrl, logger) { }
+
+        /// <summary>
+        /// Get booking by ID
+        /// </summary>
+        public async Task<(Booking? Booking, HttpStatusCode StatusCode, long ElapsedMs)> GetBookingAsync(
+            int bookingId,
+            CancellationToken cancellationToken = default)
         {
+            var request = new RestRequest($"/booking/{bookingId}", Method.Get);
+            var (response, elapsedMs) = await ExecuteAsync(request, true, cancellationToken);
+
+            if (response.IsSuccessful && !string.IsNullOrWhiteSpace(response.Content))
+            {
+                var booking = JsonHelper.DeserializeSafe<Booking>(
+                    response.Content,
+                    $"Failed to get booking {bookingId}");
+                return (booking, response.StatusCode, elapsedMs);
+            }
+
+            return (null, response.StatusCode, elapsedMs);
         }
 
-        public async Task<BookingResponse> CreateBookingAsync(Booking booking)
+        /// <summary>
+        /// Create a booking
+        /// </summary>
+        public async Task<(BookingCreatedResponse? Result, HttpStatusCode StatusCode, long ElapsedMs)> CreateBookingAsync(
+            Booking booking,
+            CancellationToken cancellationToken = default)
         {
             var request = new RestRequest("/booking", Method.Post)
                 .AddJsonBody(booking);
 
-            var response = await ExecuteAsync<BookingResponse>(request);
+            var (response, elapsedMs) = await ExecuteAsync(request, true, cancellationToken);
 
-            if (!response.IsSuccessful || response.Data is null)
-                throw new InvalidOperationException($"Failed to create booking: {response.Content}");
+            if (response.IsSuccessful && !string.IsNullOrWhiteSpace(response.Content))
+            {
+                var result = JsonHelper.DeserializeSafe<BookingCreatedResponse>(
+                    response.Content,
+                    "Failed to create booking");
+                return (result, response.StatusCode, elapsedMs);
+            }
 
-            return response.Data;
+            return (null, response.StatusCode, elapsedMs);
         }
 
-        public async Task<Booking> GetBookingAsync(int bookingId)
-        {
-            var request = new RestRequest($"/booking/{bookingId}", Method.Get);
-
-            // Logging before sending request
-            LoggingHelper.LogRequest(_logger, Method.Get, request.Resource);
-
-            var client = GetClient();
-            var response = await client.ExecuteAsync<Booking>(request);
-
-            // Logging after receiving response
-            await LoggingHelper.LogResponseAsync(_logger, response);
-
-            if (!response.IsSuccessful || response.Data is null)
-                throw new InvalidOperationException($"Failed to get booking {bookingId}: {response.Content}");
-
-            return response.Data;
-        }
-
-
-        public async Task UpdateBookingAsync(int bookingId, Booking updatedBooking)
-        {
-            var request = new RestRequest($"/booking/{bookingId}", Method.Put)
-                .AddJsonBody(updatedBooking);
-
-            var response = await ExecuteAsync(request);
-
-            if (!response.IsSuccessful)
-                throw new InvalidOperationException($"Failed to update booking {bookingId}: {response.Content}");
-        }
-
-        public async Task DeleteBookingAsync(int bookingId)
+        /// <summary>
+        /// Delete a booking
+        /// </summary>
+        public async Task<(HttpStatusCode StatusCode, long ElapsedMs)> DeleteBookingAsync(
+            int bookingId,
+            CancellationToken cancellationToken = default)
         {
             var request = new RestRequest($"/booking/{bookingId}", Method.Delete);
+            var (response, elapsedMs) = await ExecuteAsync(request, true, cancellationToken);
 
-            var response = await ExecuteAsync(request);
-
-            if (!response.IsSuccessful)
-                throw new InvalidOperationException($"Failed to delete booking {bookingId}: {response.Content}");
+            return (response.StatusCode, elapsedMs);
         }
     }
 }

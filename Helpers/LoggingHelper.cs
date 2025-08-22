@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace RestfulBookerTests.Helpers
 {
+    //TODO:delete???
     public static class LoggingHelper
     {
         public static void LogRequest(ILogger logger, Method method, string endpoint)
@@ -20,7 +21,7 @@ namespace RestfulBookerTests.Helpers
             else
                 logger.LogInformation("Sending {Method} request to {Endpoint}", method, endpoint);
         }
-
+        /*
         public static async Task LogResponseAsync(ILogger logger, RestResponse response, Stopwatch? stopwatch = null)
         {
             stopwatch ??= Stopwatch.StartNew();
@@ -48,7 +49,7 @@ namespace RestfulBookerTests.Helpers
 
             await Task.CompletedTask;
         }
-
+        */
         public static async Task LogResponseAsync<T>(ILogger logger, RestResponse<T> response, Stopwatch? stopwatch = null)
         {
             stopwatch ??= Stopwatch.StartNew();
@@ -68,6 +69,26 @@ namespace RestfulBookerTests.Helpers
                                 response.StatusCode, response.StatusDescription, elapsedMs, body);
 
             await Task.CompletedTask;
+        }
+
+        //---------------------new methods for RestRequest logging---------------------
+        public static void LogResponse(ILogger logger, RestResponse response, long elapsedMs)
+        {
+            logger.LogInformation(
+                "⬅️ Received {StatusCode} in {Elapsed} ms. Content: {Content}",
+                (int)response.StatusCode,
+                elapsedMs,
+                response.Content ?? "<empty>"
+            );
+
+            if (!response.IsSuccessful)
+            {
+                logger.LogWarning(
+                    "⚠️ Request failed. Status: {StatusCode}, Error: {ErrorMessage}",
+                    (int)response.StatusCode,
+                    response.ErrorMessage ?? "<none>"
+                );
+            }
         }
     }
 }

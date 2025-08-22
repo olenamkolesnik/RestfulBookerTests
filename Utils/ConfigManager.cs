@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace RestfulBookerTests.Utils
 {
@@ -19,7 +20,18 @@ namespace RestfulBookerTests.Utils
         }
 
         public static string BaseUrl => _config["Api:BaseUrl"] ?? throw new InvalidOperationException("BaseUrl not configured.");
-        public static string LogLevel => _config["Api:LogLevel"] ?? "DEBUG";
+        public static LogLevel LogLevel
+        {
+            get
+            {
+                var logLevelString = _config["Api:LogLevel"];
+                if (string.IsNullOrEmpty(logLevelString))
+                    return LogLevel.Debug; // Default fallback
+                if (!Enum.TryParse<LogLevel>(logLevelString, true, out var logLevel))
+                    throw new InvalidOperationException($"Invalid LogLevel value: '{logLevelString}'.");
+                return logLevel;
+            }
+        }
         public static string Username => GetEnvironmentVariable("Username");
         public static string Password => GetEnvironmentVariable("Password");
 

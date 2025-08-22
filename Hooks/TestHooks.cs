@@ -9,27 +9,28 @@ namespace RestfulBookerTests.Hooks
     public class TestHooks
     {
         private readonly ScenarioContext _scenarioContext;
-        private readonly ILoggerFactory _loggerFactory;
 
         public BaseClient BaseClient { get; private set; }
         public BookingClient BookingClient { get; private set; }
+        public HealthCheckClient HealthCheckClient { get; private set; }
         public ILogger Logger { get; private set; }
+
+        // Global logger factory shared across all scenarios
+        private static ILoggerFactory _loggerFactory;
+
+        static TestHooks()
+        {
+            // Initialize global logger factory once
+            _loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.SetMinimumLevel(ConfigManager.LogLevel);
+                builder.AddConsole();
+            });
+        }
 
         public TestHooks(ScenarioContext scenarioContext)
         {
             _scenarioContext = scenarioContext;
-
-            // Logger setup using LoggerFactory.Create
-            _loggerFactory = LoggerFactory.Create(builder =>
-            {
-                if (Enum.TryParse<LogLevel>(ConfigManager.LogLevel, true, out var logLevel))
-                    builder.SetMinimumLevel(logLevel);
-                else
-                    builder.SetMinimumLevel(LogLevel.Debug); // fallback
-
-                builder.AddConsole();
-            });
-
             Logger = _loggerFactory.CreateLogger("TestLogger");
         }
 
@@ -39,27 +40,37 @@ namespace RestfulBookerTests.Hooks
             // Initialize clients per scenario (parallel-safe)
             BaseClient = new BaseClient(ConfigManager.BaseUrl, Logger);
             BookingClient = new BookingClient(ConfigManager.BaseUrl, Logger);
+            HealthCheckClient = new HealthCheckClient(ConfigManager.BaseUrl, Logger);
 
-            // Authenticate BaseClient and share token
-            var token = BaseClient.AuthenticateAsync(ConfigManager.Username, ConfigManager.Password)
-                                  .GetAwaiter().GetResult();
-            BaseClient.SetToken(token);
-            BookingClient.SetToken(token);
+            // Authenticate and set token
+            var tags = _scenarioContext.ScenarioInfo.Tags;
+            if (!tags.Contains("noauth"))
+            {
+                BaseClient.AuthenticateAsync(ConfigManager.Username, ConfigManager.Password)
+                          .GetAwaiter().GetResult();
+                BookingClient.SetToken(BaseClient.GetToken()!);
+            }
 
             // Store in ScenarioContext for step definitions
             _scenarioContext["BaseClient"] = BaseClient;
             _scenarioContext["BookingClient"] = BookingClient;
+            _scenarioContext["HealthCheckClient"] = HealthCheckClient;
             _scenarioContext["Logger"] = Logger;
         }
 
         [AfterScenario]
         public void AfterScenario()
         {
-            // Dispose clients if they implement IDisposable
+            // Dispose scenario-specific clients
             (BaseClient as IDisposable)?.Dispose();
             (BookingClient as IDisposable)?.Dispose();
+            (HealthCheckClient as IDisposable)?.Dispose();
+        }
 
-            // Dispose logger factory to release resources
+        [AfterTestRun]
+        public static void AfterTestRun()
+        {
+            // Dispose the global logger factory once after all tests
             _loggerFactory.Dispose();
         }
     }
