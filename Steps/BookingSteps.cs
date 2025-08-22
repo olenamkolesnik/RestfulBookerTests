@@ -41,11 +41,13 @@ public class BookingSteps(ScenarioContext scenarioContext)
         if (_booking == null)
             throw new InvalidOperationException("Booking payload must be initialized before creating booking.");
 
-        (_createBookingResponse, _createdBooking, var _lastStatusCode, var _lastElapsedMs) =
-            await _bookingClient.CreateBookingAsync(_booking);
+        var (responseData, rawResponse, elapsedMs) = await _bookingClient.CreateBookingAsync(_booking);
 
-        scenarioContext["LastStatusCode"] = _lastStatusCode;
-        scenarioContext["LastElapsedMs"] = _lastElapsedMs;
+        _createBookingResponse = responseData;
+        _createdBooking = responseData.Booking;
+
+        scenarioContext["LastStatusCode"] = rawResponse.StatusCode;
+        scenarioContext["LastElapsedMs"] = elapsedMs;
     }
 
     [Then(@"the booking ID should be returned")]
@@ -60,18 +62,20 @@ public class BookingSteps(ScenarioContext scenarioContext)
         if (_createBookingResponse == null)
             throw new InvalidOperationException("Booking creation response is null.");
 
-        var (_getBookingResponse, _lastStatusCode, _lastElapsedMs) = await _bookingClient.GetBookingAsync(_createBookingResponse.Bookingid);
+        var (responseData, rawResponse, _lastElapsedMs) = await _bookingClient.GetBookingAsync(_createBookingResponse.Bookingid);      
 
-        scenarioContext["LastStatusCode"] = _lastStatusCode;
+        _createdBooking = responseData;
+
+        scenarioContext["LastStatusCode"] = rawResponse.StatusCode;
         scenarioContext["LastElapsedMs"] = _lastElapsedMs;
     }
 
     [Then(@"the response status should be (.*)")]
     public void ThenTheResponseStatusShouldBe(int expectedStatus)
     {
-        var _lastStatusCode = scenarioContext.Get<HttpStatusCode>("LastStatusCode");
-        var _lastElapsedMs = scenarioContext.Get<long>("LastElapsedMs");
-        Assert.That((int)_lastStatusCode, Is.EqualTo(expectedStatus), $"Expected status code {expectedStatus}, but got {(int)_lastStatusCode}");
+        var lastStatusCode = scenarioContext.Get<HttpStatusCode>("LastStatusCode");
+        var lastElapsedMs = scenarioContext.Get<long>("LastElapsedMs");
+        Assert.That((int)lastStatusCode, Is.EqualTo(expectedStatus), $"Expected status code {expectedStatus}, but got {(int)lastStatusCode}");
     }
 
 

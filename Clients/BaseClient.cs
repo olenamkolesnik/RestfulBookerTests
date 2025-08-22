@@ -9,7 +9,7 @@ namespace RestfulBookerTests.Clients
 {
     public class BaseClient : IDisposable
     {
-        private readonly RestClient _client;
+        protected readonly RestClient _client;
         protected readonly ILogger _logger;
         private readonly object _tokenLock = new();
         private volatile string? _token;
