@@ -2,7 +2,7 @@
 {
     public class BookingCreatedResponse
     {
-        public int Bookingid { get; set; }
+        public int BookingId { get; set; }
         public Booking Booking { get; set; }
     }
 }

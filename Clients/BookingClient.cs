@@ -46,6 +46,40 @@ namespace RestfulBookerTests.Clients
         }
 
         /// <summary>
+        /// Deletes a booking by its ID.
+        /// </summary>
+        public async Task<(RestResponse Response, long ElapsedMs)> DeleteBookingAsync(
+            int bookingId,
+            CancellationToken cancellationToken = default)
+        {
+            var request = new RestRequest($"/booking/{bookingId}", Method.Delete);
+
+            var (response, elapsedMs) = await ExecuteAsync(request, cancellationToken: cancellationToken);            
+
+            return (response, elapsedMs);
+        }
+
+        /// <summary>
+        /// Updates a booking by its ID.
+        /// </summary>
+        public async Task<(Booking BookingDetails, RestResponse RawResponse, long ElapsedMs)> UpdateBookingAsync(
+            int bookingId,
+            Booking updatedBooking,
+            CancellationToken cancellationToken = default)
+        {
+            var request = new RestRequest($"/booking/{bookingId}", Method.Put)
+                .AddJsonBody(updatedBooking);
+
+            var (data, raw, elapsedMs) = await ExecuteSafeAsync<Booking>(
+                request,
+                $"Failed to update booking with ID {bookingId}.",
+                cancellationToken: cancellationToken
+            );
+
+            return (data, raw, elapsedMs);
+        }
+
+        /// <summary>
         /// A safe execution wrapper for handling non-2xx responses and deserialization.
         /// </summary>
         private async Task<(T Data, RestResponse Raw, long ElapsedMs)> ExecuteSafeAsync<T>(
@@ -74,5 +108,7 @@ namespace RestfulBookerTests.Clients
 
             return (data, raw, elapsedMs);
         }
+
+
     }
 }
