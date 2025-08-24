@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using RestfulBookerTests.Utils;
 using RestSharp;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
