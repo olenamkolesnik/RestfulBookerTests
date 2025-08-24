@@ -8,9 +8,6 @@ namespace RestfulBookerTests.Clients
     {
         public BookingClient(string baseUrl, ILogger logger) : base(baseUrl, logger) { }
 
-        /// <summary>
-        /// Creates a new booking and returns the booking details and raw response.
-        /// </summary>
         public async Task<(BookingCreatedResponse ResponseData, RestResponse RawResponse, long ElapsedMs)> CreateBookingAsync(
             Booking booking,
             CancellationToken cancellationToken = default)
@@ -18,7 +15,7 @@ namespace RestfulBookerTests.Clients
             var request = new RestRequest("/booking", Method.Post)
                 .AddJsonBody(booking);
 
-            (BookingCreatedResponse data, RestResponse raw, long elapsedMs) = await ExecuteSafeAsync<BookingCreatedResponse>(
+            var (data, raw, elapsedMs) = await ExecuteSafeAsync<BookingCreatedResponse>(
                 request,
                 "Failed to create booking.",
                 cancellationToken: cancellationToken
@@ -27,16 +24,13 @@ namespace RestfulBookerTests.Clients
             return (data, raw, elapsedMs);
         }
 
-        /// <summary>
-        /// Retrieves a booking by its ID.
-        /// </summary>
         public async Task<(Booking BookingDetails, RestResponse RawResponse, long ElapsedMs)> GetBookingAsync(
             int bookingId,
             CancellationToken cancellationToken = default)
         {
             var request = new RestRequest($"/booking/{bookingId}", Method.Get);
 
-            (Booking data, RestResponse raw, long elapsedMs) = await ExecuteSafeAsync<Booking>(
+            var (data, raw, elapsedMs) = await ExecuteSafeAsync<Booking>(
                 request,
                 $"Failed to retrieve booking with ID {bookingId}.",
                 cancellationToken: cancellationToken
@@ -45,27 +39,17 @@ namespace RestfulBookerTests.Clients
             return (data, raw, elapsedMs);
         }
 
-        /// <summary>
-        /// Deletes a booking by its ID.
-        /// </summary>
         public async Task<(RestResponse Response, long ElapsedMs)> DeleteBookingAsync(
             int bookingId,
             CancellationToken cancellationToken = default)
         {
             var request = new RestRequest($"/booking/{bookingId}", Method.Delete);
 
-            (RestResponse response, long elapsedMs) = await ExecuteAsync(
-                request,
-                requiresAuth: true,
-                cancellationToken: cancellationToken
-            );
+            var (response, elapsedMs) = await ExecuteAsync(request, cancellationToken: cancellationToken);
 
             return (response, elapsedMs);
         }
 
-        /// <summary>
-        /// Updates a booking by its ID.
-        /// </summary>
         public async Task<(Booking BookingDetails, RestResponse RawResponse, long ElapsedMs)> UpdateBookingAsync(
             int bookingId,
             Booking updatedBooking,
@@ -74,7 +58,7 @@ namespace RestfulBookerTests.Clients
             var request = new RestRequest($"/booking/{bookingId}", Method.Put)
                 .AddJsonBody(updatedBooking);
 
-            (Booking data, RestResponse raw, long elapsedMs) = await ExecuteSafeAsync<Booking>(
+            var (data, raw, elapsedMs) = await ExecuteSafeAsync<Booking>(
                 request,
                 $"Failed to update booking with ID {bookingId}.",
                 cancellationToken: cancellationToken
@@ -83,34 +67,27 @@ namespace RestfulBookerTests.Clients
             return (data, raw, elapsedMs);
         }
 
-        /// <summary>
-        /// Wraps ExecuteAsync to include error handling for non-success responses and deserialization
-        /// </summary>
         private async Task<(T Data, RestResponse Raw, long ElapsedMs)> ExecuteSafeAsync<T>(
             RestRequest request,
             string errorMessageOnDeserialize,
             bool requiresAuth = true,
             CancellationToken cancellationToken = default) where T : class
         {
-            (T data, RestResponse raw, long elapsedMs) = await ExecuteAsync<T>(
+            var (data, raw, elapsedMs) = await ExecuteAsync<T>(
                 request,
                 errorMessageOnDeserialize,
-                requiresAuth: requiresAuth,
-                cancellationToken: cancellationToken
+                requiresAuth,
+                cancellationToken
             );
 
             if (!raw.IsSuccessful)
             {
-                _logger.LogError(
-                    "Request to {Url} failed with status {StatusCode}. Response: {Content}",
+                _logger.LogError("Request to {Url} failed with status {StatusCode}. Response: {Content}",
                     _client.BuildUri(request),
                     raw.StatusCode,
-                    raw.Content
-                );
+                    raw.Content);
 
-                throw new HttpRequestException(
-                    $"{errorMessageOnDeserialize} Status: {raw.StatusCode}. Content: {raw.Content}"
-                );
+                throw new HttpRequestException($"{errorMessageOnDeserialize} Status: {raw.StatusCode}. Content: {raw.Content}");
             }
 
             return (data, raw, elapsedMs);

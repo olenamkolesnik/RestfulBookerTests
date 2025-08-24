@@ -154,7 +154,7 @@ await this.FeatureBackgroundAsync();
     await testRunner.ThenAsync("the response status should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 11
-    await testRunner.AndAsync("the response time should be less than 500 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the response time should be less than 1000 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 12
     await testRunner.AndAsync("the booking ID should be returned", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");

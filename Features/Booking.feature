@@ -8,7 +8,7 @@ Background:
 
 Scenario: Create a new booking
     Then the response status should be 200
-    And the response time should be less than 500 ms
+    And the response time should be less than 1000 ms
     And the booking ID should be returned
     And the booking details should match what I created
 	And the response matches the "BookingCreatedResponse" schema

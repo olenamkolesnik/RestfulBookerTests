@@ -1,8 +1,8 @@
 ﻿using Json.Schema;
 using Reqnroll;
 using RestfulBookerTests.Clients;
+using RestfulBookerTests.Helpers;
 using RestfulBookerTests.Models;
-using RestSharp;
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
@@ -37,10 +37,10 @@ public class BookingSteps
     [When(@"I send a create booking request")]
     public async Task WhenISendACreateBookingRequest()
     {
-        Booking booking = _scenarioContext.Get<Booking>("CurrentBooking");
+        var booking = _scenarioContext.Get<Booking>("CurrentBooking");
+        Assert.That(booking, Is.Not.Null, "Current booking payload is null.");
 
-        (BookingCreatedResponse responseData, RestResponse rawResponse, long elapsedMs) =
-            await _bookingClient.CreateBookingAsync(booking);
+        var (responseData, rawResponse, elapsedMs) = await _bookingClient.CreateBookingAsync(booking);
 
         _scenarioContext["BookingCreatedResponse"] = responseData;
         _scenarioContext["CreatedBooking"] = responseData.Booking;
@@ -51,10 +51,10 @@ public class BookingSteps
     [When(@"I send a get booking request for that ID")]
     public async Task WhenISendAGetBookingRequestForThatId()
     {
-        BookingCreatedResponse createResponse = _scenarioContext.Get<BookingCreatedResponse>("BookingCreatedResponse");
+        var createResponse = _scenarioContext.Get<BookingCreatedResponse>("BookingCreatedResponse");
+        Assert.That(createResponse, Is.Not.Null, "Booking creation response is null.");
 
-        (Booking retrievedBooking, RestResponse rawResponse, long elapsedMs) =
-            await _bookingClient.GetBookingAsync(createResponse.BookingId);
+        var (retrievedBooking, rawResponse, elapsedMs) = await _bookingClient.GetBookingAsync(createResponse.BookingId);
 
         _scenarioContext["RetrievedBooking"] = retrievedBooking;
         _scenarioContext["LastStatusCode"] = rawResponse.StatusCode;
@@ -64,11 +64,16 @@ public class BookingSteps
     [When("I send an update booking request for that ID")]
     public async Task WhenISendAnUpdateBookingRequestForThatID()
     {
-        BookingCreatedResponse createResponse = _scenarioContext.Get<BookingCreatedResponse>("BookingCreatedResponse");
-        Booking updatedBooking = _scenarioContext.Get<Booking>("UpdatedBooking");
+        var createResponse = _scenarioContext.Get<BookingCreatedResponse>("BookingCreatedResponse");
+        var updatedBooking = _scenarioContext.Get<Booking>("UpdatedBooking");
 
-        (Booking updatedData, RestResponse rawResponse, long elapsedMs) =
-            await _bookingClient.UpdateBookingAsync(createResponse.BookingId, updatedBooking);
+        Assert.Multiple(() =>
+        {
+            Assert.That(createResponse, Is.Not.Null, "Booking creation response is null.");
+            Assert.That(updatedBooking, Is.Not.Null, "Updated booking payload is null.");
+        });
+
+        var (updatedData, rawResponse, elapsedMs) = await _bookingClient.UpdateBookingAsync(createResponse.BookingId, updatedBooking);
 
         var wrappedResponse = new BookingCreatedResponse
         {
@@ -85,9 +90,10 @@ public class BookingSteps
     [When("I send a delete booking request for that ID")]
     public async Task WhenISendADeleteBookingRequestForThatID()
     {
-        BookingCreatedResponse createResponse = _scenarioContext.Get<BookingCreatedResponse>("BookingCreatedResponse");
+        var createResponse = _scenarioContext.Get<BookingCreatedResponse>("BookingCreatedResponse");
+        Assert.That(createResponse, Is.Not.Null, "Booking creation response is null.");
 
-        (RestResponse response, long elapsedMs) = await _bookingClient.DeleteBookingAsync(createResponse.BookingId);
+        var (response, elapsedMs) = await _bookingClient.DeleteBookingAsync(createResponse.BookingId);
 
         _scenarioContext["LastStatusCode"] = response.StatusCode;
         _scenarioContext["LastElapsedMs"] = elapsedMs;
@@ -96,46 +102,52 @@ public class BookingSteps
     [Then(@"the booking ID should be returned")]
     public void ThenTheBookingIdShouldBeReturned()
     {
-        BookingCreatedResponse createResponse = _scenarioContext.Get<BookingCreatedResponse>("BookingCreatedResponse");
-        Assert.That(createResponse.BookingId, Is.GreaterThan(0));
+        var createResponse = _scenarioContext.Get<BookingCreatedResponse>("BookingCreatedResponse");
+        Assert.That(createResponse, Is.Not.Null, "Booking creation response is null.");
+        Assert.That(createResponse.BookingId, Is.GreaterThan(0), "Booking ID should be greater than zero");
     }
 
     [Then(@"the response status should be (.*)")]
     public void ThenTheResponseStatusShouldBe(int expectedStatus)
     {
-        HttpStatusCode lastStatusCode = _scenarioContext.Get<HttpStatusCode>("LastStatusCode");
-        Assert.That((int)lastStatusCode, Is.EqualTo(expectedStatus), $"Expected status code was {expectedStatus}, but was {(int)lastStatusCode}");
+        var lastStatusCode = _scenarioContext.Get<HttpStatusCode>("LastStatusCode");
+        Assert.That((int)lastStatusCode, Is.EqualTo(expectedStatus), $"Expected status code {expectedStatus}, but got {(int)lastStatusCode}");
     }
 
     [Then(@"the booking details should match what I created")]
     public void ThenTheBookingDetailsShouldMatchWhatICreated()
     {
-        Booking expected = _scenarioContext.Get<Booking>("CurrentBooking");
-        Booking actual = _scenarioContext.Get<Booking>("CreatedBooking");
+        var expected = _scenarioContext.Get<Booking>("CurrentBooking");
+        var actual = _scenarioContext.Get<Booking>("CreatedBooking");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(expected, Is.Not.Null);
+            Assert.That(actual, Is.Not.Null);
+        });
 
         CompareBookings(expected, actual);
     }
 
-    [Then("the booking details should match what I updated")]
+    [Then(@"the booking details should match what I updated")]
     public void ThenTheBookingDetailsShouldMatchWhatIUpdated()
     {
-        Booking expected = _scenarioContext.Get<Booking>("UpdatedBooking");
-        Booking actual = _scenarioContext.Get<Booking>("RetrievedBooking");
+        var expected = _scenarioContext.Get<Booking>("UpdatedBooking");
+        var actual = _scenarioContext.Get<Booking>("RetrievedBooking");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(expected, Is.Not.Null);
+            Assert.That(actual, Is.Not.Null);
+        });
 
         CompareBookings(expected, actual);
-    }
-
-    [Then(@"the response time should be less than (.*) ms")]
-    public void ThenTheResponseTimeShouldBeUnder(int maxMilliseconds)
-    {
-        long elapsedMs = _scenarioContext.Get<long>("LastElapsedMs");
-        Assert.That(elapsedMs, Is.LessThanOrEqualTo(maxMilliseconds));
     }
 
     [Then(@"the response matches the ""(.*)"" schema")]
     public void ThenTheResponseMatchesSchema(string schemaName)
     {
-        bool hasResponse = _scenarioContext.TryGetValue<object>(schemaName, out object lastResponseBody);
+        var hasResponse = _scenarioContext.TryGetValue<object>(schemaName, out var lastResponseBody);
         Assert.That(hasResponse && lastResponseBody != null);
 
         var modelType = Assembly.GetExecutingAssembly()
@@ -147,11 +159,23 @@ public class BookingSteps
         var schema = JsonSerializer.Deserialize<JsonSchema>(schemaJson);
         Assert.That(schema, Is.Not.Null);
 
-        string jsonString = JsonSerializer.Serialize(lastResponseBody);
+        var jsonString = JsonSerializer.Serialize(lastResponseBody);
         using var jsonDoc = JsonDocument.Parse(jsonString);
 
         var result = schema!.Evaluate(jsonDoc.RootElement);
-        Assert.That(result.IsValid, Is.True, $"Schema validation failed for '{schemaName}'");
+
+        Assert.That(result.IsValid, Is.True,
+            $"Schema validation failed for '{schemaName}':\n" +
+            string.Join("\n", result.Details
+                .Where(d => d.HasErrors)
+                .SelectMany(d => d.Errors!.Select(e => $"{d.InstanceLocation}: {e.Key} - {e.Value}"))));
+    }
+
+    [Then(@"the response time should be less than {int} ms")]
+    public void ThenTheResponseTimeShouldBeUnder(int maxMilliseconds)
+    {
+        var elapsedMs = _scenarioContext.Get<long>("LastElapsedMs");
+        Assert.That(elapsedMs, Is.LessThanOrEqualTo(maxMilliseconds));
     }
 
     private static Booking ParseBookingTable(Table table)

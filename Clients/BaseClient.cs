@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using RestfulBookerTests.Helpers;
 using RestfulBookerTests.Models;
+using RestfulBookerTests.Utils;
 using RestSharp;
 using System.Diagnostics;
 using System.Net;
@@ -12,7 +13,8 @@ namespace RestfulBookerTests.Clients
         protected readonly RestClient _client;
         protected readonly ILogger _logger;
         private readonly object _tokenLock = new();
-        private volatile string? _token;
+        private string? _token;
+        private DateTime? _tokenExpiry; // UTC
 
         public BaseClient(string baseUrl, ILogger logger)
         {
@@ -20,11 +22,12 @@ namespace RestfulBookerTests.Clients
             _logger = logger;
         }
 
-        public void SetToken(string token)
+        public void SetToken(string token, int expiresInMinutes = 5)
         {
             lock (_tokenLock)
             {
                 _token = token;
+                _tokenExpiry = DateTime.UtcNow.AddMinutes(expiresInMinutes);
             }
         }
 
@@ -36,103 +39,79 @@ namespace RestfulBookerTests.Clients
             }
         }
 
-        /// <summary>
-        /// Executes a request with lightweight retry and exponential backoff
-        /// </summary>
+        private bool TokenExpired()
+        {
+            lock (_tokenLock)
+            {
+                if (!_tokenExpiry.HasValue) return true;
+                return DateTime.UtcNow >= _tokenExpiry.Value;
+            }
+        }
+
         protected async Task<(RestResponse Response, long ElapsedMs)> ExecuteAsync(
             RestRequest request,
             bool requiresAuth = true,
-            int maxRetries = 3,
             CancellationToken cancellationToken = default)
         {
-            if (requiresAuth && string.IsNullOrEmpty(GetToken()))
-                throw new InvalidOperationException("Request requires auth but no token is set.");
-
+            // Lazy auth
             if (requiresAuth)
+            {
+                if (string.IsNullOrEmpty(GetToken()) || TokenExpired())
+                {
+                    _logger.LogInformation("Token missing or expired. Performing lazy authentication...");
+                    await AuthenticateAsync(ConfigManager.Username, ConfigManager.Password, cancellationToken);
+                }
+
                 request.AddOrUpdateHeader("Cookie", $"token={GetToken()}");
+            }
 
             if (!request.Parameters.Any(p => p.Name.Equals("Content-Type", StringComparison.OrdinalIgnoreCase)))
                 request.AddHeader("Content-Type", "application/json");
             if (!request.Parameters.Any(p => p.Name.Equals("Accept", StringComparison.OrdinalIgnoreCase)))
                 request.AddHeader("Accept", "application/json");
 
+            int maxRetries = 3;
             int attempt = 0;
-            var stopwatch = new Stopwatch();
+            Exception? lastException = null;
 
-            while (true)
+            while (attempt < maxRetries)
             {
-                attempt++;
                 try
                 {
-                    stopwatch.Restart();
-                    RestResponse response = await _client.ExecuteAsync(request, cancellationToken);
+                    attempt++;
+                    var stopwatch = Stopwatch.StartNew();
+                    var response = await _client.ExecuteAsync(request, cancellationToken);
                     stopwatch.Stop();
 
-                    LoggingHelper.LogRequestAndResponse(
-                        _logger,
-                        _client,
-                        request,
-                        response,
-                        stopwatch.ElapsedMilliseconds,
-                        GetToken()
-                    );
+                    LoggingHelper.LogRequestAndResponse(_logger, _client, request, response, stopwatch.ElapsedMilliseconds, GetToken());
 
-                    if ((int)response.StatusCode >= 500 || response.StatusCode == 0)
-                    {
-                        if (attempt <= maxRetries)
-                        {
-                            int delay = 200 * attempt;
-                            _logger.LogWarning(
-                                "Retry {Attempt}/{MaxRetries} after {Delay}ms due to transient failure: {Reason}",
-                                attempt,
-                                maxRetries,
-                                delay,
-                                response.StatusDescription
-                            );
-                            await Task.Delay(delay, cancellationToken);
-                            continue;
-                        }
-                    }
+                    if (response.StatusCode == 0 || (int)response.StatusCode >= 500)
+                        throw new HttpRequestException($"Server error or network failure: {(int)response.StatusCode} {response.StatusDescription}");
 
                     return (response, stopwatch.ElapsedMilliseconds);
                 }
-                catch (Exception ex) when (attempt <= maxRetries)
+                catch (Exception ex) when (attempt < maxRetries)
                 {
-                    int delay = 200 * attempt;
-                    _logger.LogWarning(
-                        ex,
-                        "Attempt {Attempt}/{MaxRetries} failed. Retrying after {Delay}ms",
-                        attempt,
-                        maxRetries,
-                        delay
-                    );
-                    await Task.Delay(delay, cancellationToken);
+                    lastException = ex;
+                    _logger.LogWarning(ex, "Attempt {Attempt} failed. Retrying...", attempt);
+                    await Task.Delay(500 * attempt, cancellationToken);
                 }
             }
+
+            throw new HttpRequestException($"Request failed after {maxRetries} attempts.", lastException);
         }
 
-        /// <summary>
-        /// Executes a request and deserializes the response content to a specified type
-        /// </summary>
         protected async Task<(T Data, RestResponse Raw, long ElapsedMs)> ExecuteAsync<T>(
             RestRequest request,
             string errorMessageOnDeserialize,
             bool requiresAuth = true,
             CancellationToken cancellationToken = default) where T : class
         {
-            (RestResponse raw, long ms) = await ExecuteAsync(
-                request,
-                requiresAuth: requiresAuth,
-                cancellationToken: cancellationToken
-            );
-
-            T data = JsonHelper.DeserializeSafe<T>(raw.Content, errorMessageOnDeserialize);
+            var (raw, ms) = await ExecuteAsync(request, requiresAuth, cancellationToken);
+            var data = JsonHelper.DeserializeSafe<T>(raw.Content, errorMessageOnDeserialize);
             return (data, raw, ms);
         }
 
-        /// <summary>
-        /// Authenticates with username/password and stores the token internally
-        /// </summary>
         public async Task<(string Content, HttpStatusCode StatusCode, long ElapsedMs)> AuthenticateAsync(
             string username,
             string password,
@@ -141,18 +120,14 @@ namespace RestfulBookerTests.Clients
             var request = new RestRequest("/auth", Method.Post)
                 .AddJsonBody(new { username, password });
 
-            (RestResponse response, long elapsedMs) = await ExecuteAsync(
-                request,
-                requiresAuth: false,
-                cancellationToken: cancellationToken
-            );
+            var (response, elapsedMs) = await ExecuteAsync(request, requiresAuth: false, cancellationToken);
 
-            AuthResponse authResponse = JsonHelper.DeserializeSafe<AuthResponse>(
+            var authResponse = JsonHelper.DeserializeSafe<AuthResponse>(
                 response.Content,
                 "Failed to authenticate."
             );
 
-            SetToken(authResponse.Token);
+            SetToken(authResponse.Token, expiresInMinutes: 5); // adjust expiry if needed
 
             return (response.Content ?? string.Empty, response.StatusCode, elapsedMs);
         }

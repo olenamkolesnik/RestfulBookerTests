@@ -15,12 +15,10 @@ namespace RestfulBookerTests.Hooks
         public HealthCheckClient HealthCheckClient { get; private set; }
         public ILogger Logger { get; private set; }
 
-        // Global logger factory shared across all scenarios
         private static ILoggerFactory _loggerFactory;
 
         static TestHooks()
         {
-            // Initialize global logger factory once
             _loggerFactory = LoggerFactory.Create(builder =>
             {
                 builder.SetMinimumLevel(ConfigManager.LogLevel);
@@ -42,15 +40,6 @@ namespace RestfulBookerTests.Hooks
             BookingClient = new BookingClient(ConfigManager.BaseUrl, Logger);
             HealthCheckClient = new HealthCheckClient(ConfigManager.BaseUrl, Logger);
 
-            // Authenticate and set token
-            var tags = _scenarioContext.ScenarioInfo.Tags;
-            if (!tags.Contains("noauth"))
-            {
-                BaseClient.AuthenticateAsync(ConfigManager.Username, ConfigManager.Password)
-                          .GetAwaiter().GetResult();
-                BookingClient.SetToken(BaseClient.GetToken()!);
-            }
-
             // Store in ScenarioContext for step definitions
             _scenarioContext["BaseClient"] = BaseClient;
             _scenarioContext["BookingClient"] = BookingClient;
@@ -61,7 +50,6 @@ namespace RestfulBookerTests.Hooks
         [AfterScenario]
         public void AfterScenario()
         {
-            // Dispose scenario-specific clients
             (BaseClient as IDisposable)?.Dispose();
             (BookingClient as IDisposable)?.Dispose();
             (HealthCheckClient as IDisposable)?.Dispose();
@@ -70,7 +58,6 @@ namespace RestfulBookerTests.Hooks
         [AfterTestRun]
         public static void AfterTestRun()
         {
-            // Dispose the global logger factory once after all tests
             _loggerFactory.Dispose();
         }
     }
