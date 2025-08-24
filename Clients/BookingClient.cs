@@ -18,7 +18,7 @@ namespace RestfulBookerTests.Clients
             var request = new RestRequest("/booking", Method.Post)
                 .AddJsonBody(booking);
 
-            var (data, raw, elapsedMs) = await ExecuteSafeAsync<BookingCreatedResponse>(
+            (BookingCreatedResponse data, RestResponse raw, long elapsedMs) = await ExecuteSafeAsync<BookingCreatedResponse>(
                 request,
                 "Failed to create booking.",
                 cancellationToken: cancellationToken
@@ -36,7 +36,7 @@ namespace RestfulBookerTests.Clients
         {
             var request = new RestRequest($"/booking/{bookingId}", Method.Get);
 
-            var (data, raw, elapsedMs) = await ExecuteSafeAsync<Booking>(
+            (Booking data, RestResponse raw, long elapsedMs) = await ExecuteSafeAsync<Booking>(
                 request,
                 $"Failed to retrieve booking with ID {bookingId}.",
                 cancellationToken: cancellationToken
@@ -54,7 +54,11 @@ namespace RestfulBookerTests.Clients
         {
             var request = new RestRequest($"/booking/{bookingId}", Method.Delete);
 
-            var (response, elapsedMs) = await ExecuteAsync(request, cancellationToken: cancellationToken);            
+            (RestResponse response, long elapsedMs) = await ExecuteAsync(
+                request,
+                requiresAuth: true,
+                cancellationToken: cancellationToken
+            );
 
             return (response, elapsedMs);
         }
@@ -70,7 +74,7 @@ namespace RestfulBookerTests.Clients
             var request = new RestRequest($"/booking/{bookingId}", Method.Put)
                 .AddJsonBody(updatedBooking);
 
-            var (data, raw, elapsedMs) = await ExecuteSafeAsync<Booking>(
+            (Booking data, RestResponse raw, long elapsedMs) = await ExecuteSafeAsync<Booking>(
                 request,
                 $"Failed to update booking with ID {bookingId}.",
                 cancellationToken: cancellationToken
@@ -80,7 +84,7 @@ namespace RestfulBookerTests.Clients
         }
 
         /// <summary>
-        /// A safe execution wrapper for handling non-2xx responses and deserialization.
+        /// Wraps ExecuteAsync to include error handling for non-success responses and deserialization
         /// </summary>
         private async Task<(T Data, RestResponse Raw, long ElapsedMs)> ExecuteSafeAsync<T>(
             RestRequest request,
@@ -88,27 +92,28 @@ namespace RestfulBookerTests.Clients
             bool requiresAuth = true,
             CancellationToken cancellationToken = default) where T : class
         {
-            var (data, raw, elapsedMs) = await ExecuteAsync<T>(
+            (T data, RestResponse raw, long elapsedMs) = await ExecuteAsync<T>(
                 request,
                 errorMessageOnDeserialize,
-                requiresAuth,
-                cancellationToken
+                requiresAuth: requiresAuth,
+                cancellationToken: cancellationToken
             );
 
-            // Additional error handling for non-successful responses
             if (!raw.IsSuccessful)
             {
-                _logger.LogError("Request to {Url} failed with status {StatusCode}. Response: {Content}",
+                _logger.LogError(
+                    "Request to {Url} failed with status {StatusCode}. Response: {Content}",
                     _client.BuildUri(request),
                     raw.StatusCode,
-                    raw.Content);
+                    raw.Content
+                );
 
-                throw new HttpRequestException($"{errorMessageOnDeserialize} Status: {raw.StatusCode}. Content: {raw.Content}");
+                throw new HttpRequestException(
+                    $"{errorMessageOnDeserialize} Status: {raw.StatusCode}. Content: {raw.Content}"
+                );
             }
 
             return (data, raw, elapsedMs);
         }
-
-
     }
 }

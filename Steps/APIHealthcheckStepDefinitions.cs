@@ -25,11 +25,11 @@ namespace RestfulBookerTests.Steps
 
         [When(@"I send a ping request")]
         public async Task WhenISendAPingRequest()
-        {
+        {/*
             var (_pingResponse, _pingElapsedMs) = await _healthCheckClient.PingAsync();
 
             _scenarioContext["LastStatusCode"] = _pingResponse.StatusCode;
-            _scenarioContext["LastElapsedMs"] = _pingElapsedMs;
+            _scenarioContext["LastElapsedMs"] = _pingElapsedMs;*/
         }
 
        

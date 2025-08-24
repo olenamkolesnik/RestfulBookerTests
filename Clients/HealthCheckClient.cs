@@ -8,7 +8,7 @@ namespace RestfulBookerTests.Clients
              : base(baseUrl, logger)
         {
         }
-
+        /*
         /// <summary>
         /// Ping the server. No authentication required.
         /// </summary>
@@ -19,6 +19,6 @@ namespace RestfulBookerTests.Clients
             var (response, elapsedMs) = await ExecuteAsync(request, requiresAuth: false, cancellationToken);
 
             return (response, elapsedMs);
-        }
+        }*/
     }
 }

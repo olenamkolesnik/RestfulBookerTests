@@ -20,9 +20,6 @@ namespace RestfulBookerTests.Clients
             _logger = logger;
         }
 
-        /// <summary>
-        /// Safely sets the authentication token.
-        /// </summary>
         public void SetToken(string token)
         {
             lock (_tokenLock)
@@ -31,9 +28,6 @@ namespace RestfulBookerTests.Clients
             }
         }
 
-        /// <summary>
-        /// Retrieves the current token (thread-safe).
-        /// </summary>
         public string? GetToken()
         {
             lock (_tokenLock)
@@ -43,64 +37,82 @@ namespace RestfulBookerTests.Clients
         }
 
         /// <summary>
-        /// Executes a request and returns the raw RestResponse along with elapsed milliseconds.
-        /// Includes error handling and retries for transient failures.
+        /// Executes a request with lightweight retry and exponential backoff
         /// </summary>
         protected async Task<(RestResponse Response, long ElapsedMs)> ExecuteAsync(
             RestRequest request,
             bool requiresAuth = true,
+            int maxRetries = 3,
             CancellationToken cancellationToken = default)
         {
             if (requiresAuth && string.IsNullOrEmpty(GetToken()))
-                throw new InvalidOperationException("Request requires auth but no token is set. Call AuthenticateAsync or SetToken first.");
+                throw new InvalidOperationException("Request requires auth but no token is set.");
 
-            // Add auth header if required
             if (requiresAuth)
                 request.AddOrUpdateHeader("Cookie", $"token={GetToken()}");
 
-            // Ensure JSON headers
             if (!request.Parameters.Any(p => p.Name.Equals("Content-Type", StringComparison.OrdinalIgnoreCase)))
                 request.AddHeader("Content-Type", "application/json");
             if (!request.Parameters.Any(p => p.Name.Equals("Accept", StringComparison.OrdinalIgnoreCase)))
                 request.AddHeader("Accept", "application/json");
-                        
-            int maxRetries = 3;
-            int attempt = 0;
-            Exception? lastException = null;
 
-            while (attempt < maxRetries)
+            int attempt = 0;
+            var stopwatch = new Stopwatch();
+
+            while (true)
             {
+                attempt++;
                 try
                 {
-                    attempt++;
-                    var stopwatch = Stopwatch.StartNew();
-                    var response = await _client.ExecuteAsync(request, cancellationToken);
+                    stopwatch.Restart();
+                    RestResponse response = await _client.ExecuteAsync(request, cancellationToken);
                     stopwatch.Stop();
 
-                    // Log after execution
-                    LoggingHelper.LogRequestAndResponse(_logger, _client, request, response, stopwatch.ElapsedMilliseconds, GetToken());
+                    LoggingHelper.LogRequestAndResponse(
+                        _logger,
+                        _client,
+                        request,
+                        response,
+                        stopwatch.ElapsedMilliseconds,
+                        GetToken()
+                    );
 
-                    // Check for network or server errors
-                    if (response.StatusCode == 0 || (int)response.StatusCode >= 500)
+                    if ((int)response.StatusCode >= 500 || response.StatusCode == 0)
                     {
-                        throw new HttpRequestException($"Server error or network failure: {(int)response.StatusCode} {response.StatusDescription}");
+                        if (attempt <= maxRetries)
+                        {
+                            int delay = 200 * attempt;
+                            _logger.LogWarning(
+                                "Retry {Attempt}/{MaxRetries} after {Delay}ms due to transient failure: {Reason}",
+                                attempt,
+                                maxRetries,
+                                delay,
+                                response.StatusDescription
+                            );
+                            await Task.Delay(delay, cancellationToken);
+                            continue;
+                        }
                     }
 
                     return (response, stopwatch.ElapsedMilliseconds);
                 }
-                catch (Exception ex) when (attempt < maxRetries)
+                catch (Exception ex) when (attempt <= maxRetries)
                 {
-                    lastException = ex;
-                    _logger.LogWarning(ex, "Attempt {Attempt} failed. Retrying...", attempt);
-                    await Task.Delay(500 * attempt, cancellationToken); // exponential backoff
+                    int delay = 200 * attempt;
+                    _logger.LogWarning(
+                        ex,
+                        "Attempt {Attempt}/{MaxRetries} failed. Retrying after {Delay}ms",
+                        attempt,
+                        maxRetries,
+                        delay
+                    );
+                    await Task.Delay(delay, cancellationToken);
                 }
             }
-
-            throw new HttpRequestException($"Request failed after {maxRetries} attempts.", lastException);
         }
 
         /// <summary>
-        /// Executes a request and deserializes the response content to the specified type.
+        /// Executes a request and deserializes the response content to a specified type
         /// </summary>
         protected async Task<(T Data, RestResponse Raw, long ElapsedMs)> ExecuteAsync<T>(
             RestRequest request,
@@ -108,13 +120,18 @@ namespace RestfulBookerTests.Clients
             bool requiresAuth = true,
             CancellationToken cancellationToken = default) where T : class
         {
-            var (raw, ms) = await ExecuteAsync(request, requiresAuth, cancellationToken);
-            var data = JsonHelper.DeserializeSafe<T>(raw.Content, errorMessageOnDeserialize);
+            (RestResponse raw, long ms) = await ExecuteAsync(
+                request,
+                requiresAuth: requiresAuth,
+                cancellationToken: cancellationToken
+            );
+
+            T data = JsonHelper.DeserializeSafe<T>(raw.Content, errorMessageOnDeserialize);
             return (data, raw, ms);
         }
 
         /// <summary>
-        /// Authenticates with username/password and stores the token internally (thread-safe).
+        /// Authenticates with username/password and stores the token internally
         /// </summary>
         public async Task<(string Content, HttpStatusCode StatusCode, long ElapsedMs)> AuthenticateAsync(
             string username,
@@ -124,9 +141,13 @@ namespace RestfulBookerTests.Clients
             var request = new RestRequest("/auth", Method.Post)
                 .AddJsonBody(new { username, password });
 
-            var (response, elapsedMs) = await ExecuteAsync(request, requiresAuth: false, cancellationToken);
+            (RestResponse response, long elapsedMs) = await ExecuteAsync(
+                request,
+                requiresAuth: false,
+                cancellationToken: cancellationToken
+            );
 
-            var authResponse = JsonHelper.DeserializeSafe<AuthResponse>(
+            AuthResponse authResponse = JsonHelper.DeserializeSafe<AuthResponse>(
                 response.Content,
                 "Failed to authenticate."
             );
