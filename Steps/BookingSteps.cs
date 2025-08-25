@@ -1,5 +1,4 @@
-﻿using Json.Schema;
-using Reqnroll;
+﻿using Reqnroll;
 using RestfulBookerTests.Clients;
 using RestfulBookerTests.Extensions;
 using RestfulBookerTests.Helpers;
@@ -7,6 +6,7 @@ using RestfulBookerTests.Models;
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
+using Json.Schema;
 
 [Binding]
 public class BookingSteps
@@ -19,6 +19,8 @@ public class BookingSteps
         _scenarioContext = scenarioContext;
         _bookingClient = _scenarioContext.GetClient<BookingClient>();
     }
+
+    #region Given Steps
 
     [Given("I have a booking with:")]
     public void GivenIHaveABookingWith(Table table)
@@ -34,11 +36,14 @@ public class BookingSteps
         _scenarioContext.SetData(ScenarioKeys.UpdatedBooking, booking);
     }
 
+    #endregion
+
+    #region When Steps
+
     [When(@"I send a create booking request")]
     public async Task WhenISendACreateBookingRequest()
     {
         var booking = _scenarioContext.GetData<Booking>(ScenarioKeys.CurrentBooking);
-
         Assert.That(booking, Is.Not.Null, "Current booking payload is null.");
 
         var (responseData, rawResponse, elapsedMs) = await _bookingClient.CreateBookingAsync(booking);
@@ -81,6 +86,7 @@ public class BookingSteps
             BookingId = createResponse.BookingId,
             Booking = updatedData
         };
+
         _scenarioContext.SetData(ScenarioKeys.BookingCreatedResponse, wrappedResponse);
         _scenarioContext.SetData(ScenarioKeys.RetrievedBooking, updatedData);
         _scenarioContext.SetData(ScenarioKeys.LastStatusCode, rawResponse.StatusCode);
@@ -99,6 +105,10 @@ public class BookingSteps
         _scenarioContext.SetData(ScenarioKeys.LastElapsedMs, elapsedMs);
     }
 
+    #endregion
+
+    #region Then Steps
+
     [Then(@"the booking ID should be returned")]
     public void ThenTheBookingIdShouldBeReturned()
     {
@@ -111,7 +121,7 @@ public class BookingSteps
     [Then(@"the response status should be (.*)")]
     public void ThenTheResponseStatusShouldBe(int expectedStatus)
     {
-        var lastStatusCode = _scenarioContext.GetData< HttpStatusCode>(ScenarioKeys.LastStatusCode);
+        var lastStatusCode = _scenarioContext.GetData<HttpStatusCode>(ScenarioKeys.LastStatusCode);
         AssertionHelper.AssertStatusCode(lastStatusCode, expectedStatus);
     }
 
@@ -136,19 +146,20 @@ public class BookingSteps
     [Then(@"the response matches the ""(.*)"" schema")]
     public void ThenTheResponseMatchesSchema(string schemaName)
     {
-        // This method might need adjustment based on how you want to handle schema validation
-        // For now, keeping the original logic but you could create typed extensions for this too
-        var hasResponse = _scenarioContext.TryGetValue<object>(schemaName, out var lastResponseBody);
-        Assert.That(hasResponse && lastResponseBody != null);
+        if (!_scenarioContext.TryGetData<object>(schemaName, out var lastResponseBody) || lastResponseBody == null)
+        {
+            Assert.Fail($"Response body for '{schemaName}' not found in ScenarioContext.");
+        }
 
         var modelType = Assembly.GetExecutingAssembly()
             .GetTypes()
             .FirstOrDefault(t => t.Name.Equals(schemaName, StringComparison.OrdinalIgnoreCase));
-        Assert.That(modelType, Is.Not.Null);
+
+        Assert.That(modelType, Is.Not.Null, $"Type '{schemaName}' not found in current assembly.");
 
         string schemaJson = SchemaGeneratorHelper.GenerateSchemaAsString(modelType!);
         var schema = JsonSerializer.Deserialize<JsonSchema>(schemaJson);
-        Assert.That(schema, Is.Not.Null);
+        Assert.That(schema, Is.Not.Null, "Schema deserialization failed.");
 
         var jsonString = JsonSerializer.Serialize(lastResponseBody);
         using var jsonDoc = JsonDocument.Parse(jsonString);
@@ -169,6 +180,10 @@ public class BookingSteps
         AssertionHelper.AssertResponseTime(elapsedMs, maxMilliseconds);
     }
 
+    #endregion
+
+    #region Helpers
+
     private static Booking ParseBookingTable(Table table)
     {
         var row = table.Rows[0];
@@ -186,4 +201,6 @@ public class BookingSteps
             Additionalneeds = row["additionalneeds"]
         };
     }
+
+    #endregion
 }
