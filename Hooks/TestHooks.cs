@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Reqnroll;
 using RestfulBookerTests.Clients;
+using RestfulBookerTests.Extensions;
 using RestfulBookerTests.Utils;
 
 namespace RestfulBookerTests.Hooks
@@ -12,7 +13,6 @@ namespace RestfulBookerTests.Hooks
 
         public BaseClient BaseClient { get; private set; }
         public BookingClient BookingClient { get; private set; }
-        public HealthCheckClient HealthCheckClient { get; private set; }
         public ILogger Logger { get; private set; }
 
         private static ILoggerFactory _loggerFactory;
@@ -38,13 +38,11 @@ namespace RestfulBookerTests.Hooks
             // Initialize clients per scenario (parallel-safe)
             BaseClient = new BaseClient(ConfigManager.BaseUrl, Logger);
             BookingClient = new BookingClient(ConfigManager.BaseUrl, Logger);
-            HealthCheckClient = new HealthCheckClient(ConfigManager.BaseUrl, Logger);
 
-            // Store in ScenarioContext for step definitions
-            _scenarioContext["BaseClient"] = BaseClient;
-            _scenarioContext["BookingClient"] = BookingClient;
-            _scenarioContext["HealthCheckClient"] = HealthCheckClient;
-            _scenarioContext["Logger"] = Logger;
+            // Store clients using typed extension methods
+            _scenarioContext.SetClient(BaseClient);
+            _scenarioContext.SetClient(BookingClient);
+            _scenarioContext.SetLogger(Logger);
         }
 
         [AfterScenario]
@@ -52,7 +50,6 @@ namespace RestfulBookerTests.Hooks
         {
             (BaseClient as IDisposable)?.Dispose();
             (BookingClient as IDisposable)?.Dispose();
-            (HealthCheckClient as IDisposable)?.Dispose();
         }
 
         [AfterTestRun]
