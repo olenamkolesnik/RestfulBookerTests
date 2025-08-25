@@ -23,20 +23,8 @@ namespace RestfulBookerTests.Extensions
             var key = typeof(T).Name;
             context[key] = client;
         }
-
-        // Specific typed methods for better IntelliSense and discoverability
-        public static BookingClient GetBookingClient(this ScenarioContext context)
-        {
-            return context.GetClient<BookingClient>();
-        }
-
-        public static BaseClient GetBaseClient(this ScenarioContext context)
-        {
-            return context.GetClient<BaseClient>();
-        }
-
-        // Optional: Methods for other common scenario data
-        public static T GetData<T>(this ScenarioContext context, string key) where T : class
+      
+        public static T GetData<T>(this ScenarioContext context, string key)
         {
             if (!context.TryGetValue<T>(key, out var data) || data == null)
             {
@@ -45,96 +33,9 @@ namespace RestfulBookerTests.Extensions
             return data;
         }
 
-        public static void SetData<T>(this ScenarioContext context, string key, T data) where T : class
+        public static void SetData<T>(this ScenarioContext context, string key, T data)
         {
             context[key] = data;
-        }
-
-        // Strongly typed methods for all scenario data
-
-        // Current Booking
-        public static void SetCurrentBooking(this ScenarioContext context, RestfulBookerTests.Models.Booking booking)
-        {
-            context[ScenarioKeys.CurrentBooking] = booking;
-        }
-
-        public static RestfulBookerTests.Models.Booking GetCurrentBooking(this ScenarioContext context)
-        {
-            return context.GetData<RestfulBookerTests.Models.Booking>(ScenarioKeys.CurrentBooking);
-        }
-
-        // Updated Booking
-        public static void SetUpdatedBooking(this ScenarioContext context, RestfulBookerTests.Models.Booking booking)
-        {
-            context[ScenarioKeys.UpdatedBooking] = booking;
-        }
-
-        public static RestfulBookerTests.Models.Booking GetUpdatedBooking(this ScenarioContext context)
-        {
-            return context.GetData<RestfulBookerTests.Models.Booking>(ScenarioKeys.UpdatedBooking);
-        }
-
-        // Booking Created Response
-        public static void SetBookingCreatedResponse(this ScenarioContext context, RestfulBookerTests.Models.BookingCreatedResponse response)
-        {
-            context[ScenarioKeys.BookingCreatedResponse] = response;
-        }
-
-        public static RestfulBookerTests.Models.BookingCreatedResponse GetBookingCreatedResponse(this ScenarioContext context)
-        {
-            return context.GetData<RestfulBookerTests.Models.BookingCreatedResponse>(ScenarioKeys.BookingCreatedResponse);
-        }
-
-        // Created Booking
-        public static void SetCreatedBooking(this ScenarioContext context, RestfulBookerTests.Models.Booking booking)
-        {
-            context[ScenarioKeys.CreatedBooking] = booking;
-        }
-
-        public static RestfulBookerTests.Models.Booking GetCreatedBooking(this ScenarioContext context)
-        {
-            return context.GetData<RestfulBookerTests.Models.Booking>(ScenarioKeys.CreatedBooking);
-        }
-
-        // Retrieved Booking
-        public static void SetRetrievedBooking(this ScenarioContext context, RestfulBookerTests.Models.Booking booking)
-        {
-            context[ScenarioKeys.RetrievedBooking] = booking;
-        }
-
-        public static RestfulBookerTests.Models.Booking GetRetrievedBooking(this ScenarioContext context)
-        {
-            return context.GetData<RestfulBookerTests.Models.Booking>(ScenarioKeys.RetrievedBooking);
-        }
-
-        // Last Status Code
-        public static void SetLastStatusCode(this ScenarioContext context, System.Net.HttpStatusCode statusCode)
-        {
-            context[ScenarioKeys.LastStatusCode] = statusCode;
-        }
-
-        public static System.Net.HttpStatusCode GetLastStatusCode(this ScenarioContext context)
-        {
-            if (!context.TryGetValue<System.Net.HttpStatusCode>(ScenarioKeys.LastStatusCode, out var statusCode))
-            {
-                throw new InvalidOperationException("LastStatusCode not found in ScenarioContext.");
-            }
-            return statusCode;
-        }
-
-        // Last Elapsed Ms
-        public static void SetLastElapsedMs(this ScenarioContext context, long elapsedMs)
-        {
-            context[ScenarioKeys.LastElapsedMs] = elapsedMs;
-        }
-
-        public static long GetLastElapsedMs(this ScenarioContext context)
-        {
-            if (!context.TryGetValue<long>(ScenarioKeys.LastElapsedMs, out var elapsedMs))
-            {
-                throw new InvalidOperationException("LastElapsedMs not found in ScenarioContext.");
-            }
-            return elapsedMs;
         }
 
         // Logger (keeping this for completeness)
