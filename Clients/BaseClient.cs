@@ -11,15 +11,22 @@ namespace RestfulBookerTests.Clients
     public class BaseClient : IDisposable
     {
         protected readonly RestClient _client;
-        protected readonly ILogger _logger;
+        protected readonly ILogger<BaseClient> _logger;
+        private readonly LoggingHelper _loggingHelper;
+
         private readonly object _tokenLock = new();
         private string? _token;
-        private DateTime? _tokenExpiry; // UTC
+        private DateTime? _tokenExpiry;
 
-        public BaseClient(string baseUrl, ILogger logger)
+        private readonly ConfigManager _config;
+
+        public BaseClient(ConfigManager config, ILogger<BaseClient> logger, LoggingHelper loggingHelper)
         {
-            _client = new RestClient(baseUrl);
-            _logger = logger;
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _loggingHelper = loggingHelper ?? throw new ArgumentNullException(nameof(loggingHelper));
+
+            _client = new RestClient(config.BaseUrl);
         }
 
         public void SetToken(string token, int expiresInMinutes = 5)
@@ -33,19 +40,12 @@ namespace RestfulBookerTests.Clients
 
         public string? GetToken()
         {
-            lock (_tokenLock)
-            {
-                return _token;
-            }
+            lock (_tokenLock) return _token;
         }
 
         private bool TokenExpired()
         {
-            lock (_tokenLock)
-            {
-                if (!_tokenExpiry.HasValue) return true;
-                return DateTime.UtcNow >= _tokenExpiry.Value;
-            }
+            lock (_tokenLock) return !_tokenExpiry.HasValue || DateTime.UtcNow >= _tokenExpiry.Value;
         }
 
         protected async Task<(RestResponse Response, long ElapsedMs)> ExecuteAsync(
@@ -53,14 +53,10 @@ namespace RestfulBookerTests.Clients
             bool requiresAuth = true,
             CancellationToken cancellationToken = default)
         {
-            // Lazy auth
             if (requiresAuth)
             {
                 if (string.IsNullOrEmpty(GetToken()) || TokenExpired())
-                {
-                    _logger.LogInformation("Token missing or expired. Performing lazy authentication...");
-                    await AuthenticateAsync(ConfigManager.Username, ConfigManager.Password, cancellationToken);
-                }
+                    await AuthenticateAsync(_config.Username, _config.Password, cancellationToken);
 
                 request.AddOrUpdateHeader("Cookie", $"token={GetToken()}");
             }
@@ -83,7 +79,7 @@ namespace RestfulBookerTests.Clients
                     var response = await _client.ExecuteAsync(request, cancellationToken);
                     stopwatch.Stop();
 
-                    LoggingHelper.LogRequestAndResponse(_logger, _client, request, response, stopwatch.ElapsedMilliseconds, GetToken());
+                    _loggingHelper.LogRequestAndResponse(_logger, _client, request, response, stopwatch.ElapsedMilliseconds, GetToken());
 
                     if (response.StatusCode == 0 || (int)response.StatusCode >= 500)
                         throw new HttpRequestException($"Server error or network failure: {(int)response.StatusCode} {response.StatusDescription}");
@@ -127,14 +123,11 @@ namespace RestfulBookerTests.Clients
                 "Failed to authenticate."
             );
 
-            SetToken(authResponse.Token, expiresInMinutes: 5); // adjust expiry if needed
+            SetToken(authResponse.Token, expiresInMinutes: 5);
 
             return (response.Content ?? string.Empty, response.StatusCode, elapsedMs);
         }
 
-        public void Dispose()
-        {
-            _client.Dispose();
-        }
+        public void Dispose() => _client.Dispose();
     }
 }

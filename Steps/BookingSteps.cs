@@ -1,23 +1,28 @@
-﻿using Reqnroll;
+﻿using Json.Schema;
+using Microsoft.Extensions.Logging;
+using Reqnroll;
 using RestfulBookerTests.Clients;
-using RestfulBookerTests.Extensions;
 using RestfulBookerTests.Helpers;
 using RestfulBookerTests.Models;
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
-using Json.Schema;
 
 [Binding]
 public class BookingSteps
 {
     private readonly ScenarioContext _scenarioContext;
     private readonly BookingClient _bookingClient;
+    private readonly ILogger<BookingSteps> _logger;
 
-    public BookingSteps(ScenarioContext scenarioContext)
+    public BookingSteps(
+        ScenarioContext scenarioContext,
+        BookingClient bookingClient,
+        ILogger<BookingSteps> logger)
     {
         _scenarioContext = scenarioContext;
-        _bookingClient = _scenarioContext.GetClient<BookingClient>();
+        _bookingClient = bookingClient;
+        _logger = logger;
     }
 
     #region Given Steps
@@ -113,7 +118,6 @@ public class BookingSteps
     public void ThenTheBookingIdShouldBeReturned()
     {
         var createResponse = _scenarioContext.GetData<BookingCreatedResponse>(ScenarioKeys.BookingCreatedResponse);
-
         Assert.That(createResponse, Is.Not.Null, "Booking creation response is null.");
         Assert.That(createResponse.BookingId, Is.GreaterThan(0), "Booking ID should be greater than zero");
     }
@@ -130,7 +134,6 @@ public class BookingSteps
     {
         var expected = _scenarioContext.GetData<Booking>(ScenarioKeys.CurrentBooking);
         var actual = _scenarioContext.GetData<Booking>(ScenarioKeys.CreatedBooking);
-
         AssertionHelper.AssertBookingEquality(expected, actual);
     }
 
@@ -139,7 +142,6 @@ public class BookingSteps
     {
         var expected = _scenarioContext.GetData<Booking>(ScenarioKeys.UpdatedBooking);
         var actual = _scenarioContext.GetData<Booking>(ScenarioKeys.RetrievedBooking);
-
         AssertionHelper.AssertBookingEquality(expected, actual);
     }
 
