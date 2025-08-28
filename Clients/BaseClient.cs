@@ -112,6 +112,34 @@ public class BaseClient : IDisposable
         return (data, raw, elapsedMs);
     }
 
+    public async Task<(RestResponse Response, long ElapsedMs)> ExecuteSafeAsync(
+    RestRequest request,
+    bool requiresAuth = true,
+    CancellationToken cancellationToken = default)
+    {
+        if (requiresAuth)
+        {
+            if (string.IsNullOrEmpty(GetToken()) || TokenExpired())
+                await AuthenticateAsync(_config.Username, _config.Password, cancellationToken);
+
+            request.AddOrUpdateHeader("Cookie", $"token={GetToken()}");
+        }
+
+        if (!request.Parameters.Any(p => p.Name.Equals("Content-Type", StringComparison.OrdinalIgnoreCase)))
+            request.AddHeader("Content-Type", "application/json");
+        if (!request.Parameters.Any(p => p.Name.Equals("Accept", StringComparison.OrdinalIgnoreCase)))
+            request.AddHeader("Accept", "application/json");
+
+        var stopwatch = Stopwatch.StartNew();
+        var response = await _client.ExecuteAsync(request, cancellationToken);
+        stopwatch.Stop();
+
+        _loggingHelper.LogRequestAndResponse(_logger, _client, request, response, stopwatch.ElapsedMilliseconds, GetToken());
+
+        return (response, stopwatch.ElapsedMilliseconds); // Always return even if 4xx/5xx
+    }
+
+
     public async Task<(string Content, HttpStatusCode StatusCode, long ElapsedMs)> AuthenticateAsync(
         string username,
         string password,

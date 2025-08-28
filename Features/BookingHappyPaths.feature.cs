@@ -18,18 +18,18 @@ namespace RestfulBookerTests.Features
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Reqnroll", "2.0.0.0")]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     [NUnit.Framework.TestFixtureAttribute()]
-    [NUnit.Framework.DescriptionAttribute("Booking Management")]
+    [NUnit.Framework.DescriptionAttribute("Booking Management - Happy Paths")]
     [NUnit.Framework.FixtureLifeCycleAttribute(NUnit.Framework.LifeCycle.InstancePerTestCase)]
-    public partial class BookingManagementFeature
+    public partial class BookingManagement_HappyPathsFeature
     {
         
         private global::Reqnroll.ITestRunner testRunner;
         
         private static string[] featureTags = ((string[])(null));
         
-        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new global::System.Globalization.CultureInfo("en-US"), "Features", "Booking Management", null, global::Reqnroll.ProgrammingLanguage.CSharp, featureTags);
+        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new global::System.Globalization.CultureInfo("en-US"), "Features", "Booking Management - Happy Paths", null, global::Reqnroll.ProgrammingLanguage.CSharp, featureTags);
         
-#line 1 "Booking.feature"
+#line 1 "BookingHappyPaths.feature"
 #line hidden
         
         [NUnit.Framework.OneTimeSetUpAttribute()]
@@ -106,7 +106,7 @@ namespace RestfulBookerTests.Features
         {
 #line 3
 #line hidden
-            global::Reqnroll.Table table1 = new global::Reqnroll.Table(new string[] {
+            global::Reqnroll.Table table3 = new global::Reqnroll.Table(new string[] {
                         "firstname",
                         "lastname",
                         "totalprice",
@@ -114,7 +114,7 @@ namespace RestfulBookerTests.Features
                         "checkin",
                         "checkout",
                         "additionalneeds"});
-            table1.AddRow(new string[] {
+            table3.AddRow(new string[] {
                         "John",
                         "Doe",
                         "150",
@@ -123,10 +123,10 @@ namespace RestfulBookerTests.Features
                         "2025-08-30",
                         "Breakfast"});
 #line 4
-    await testRunner.GivenAsync("I have a booking with:", ((string)(null)), table1, "Given ");
+ await testRunner.GivenAsync("I have a booking with:", ((string)(null)), table3, "Given ");
 #line hidden
 #line 7
-    await testRunner.WhenAsync("I send a create booking request", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+ await testRunner.WhenAsync("I send a create booking request", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
         }
         
@@ -151,16 +151,16 @@ this.ScenarioInitialize(scenarioInfo);
 await this.FeatureBackgroundAsync();
 #line hidden
 #line 10
-    await testRunner.ThenAsync("the response status should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+ await testRunner.ThenAsync("the response status should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 11
-    await testRunner.AndAsync("the response time should be less than 1000 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+ await testRunner.AndAsync("the response time should be less than 1000 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 12
-    await testRunner.AndAsync("the booking ID should be returned", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+ await testRunner.AndAsync("the booking ID should be returned", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 13
-    await testRunner.AndAsync("the booking details should match what I created", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+ await testRunner.AndAsync("the booking details should match what I created", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 14
  await testRunner.AndAsync("the response matches the \"BookingCreatedResponse\" schema", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
@@ -190,16 +190,16 @@ this.ScenarioInitialize(scenarioInfo);
 await this.FeatureBackgroundAsync();
 #line hidden
 #line 17
-    await testRunner.WhenAsync("I send a get booking request for that ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+ await testRunner.WhenAsync("I send a get booking request for that ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 18
-    await testRunner.ThenAsync("the response status should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+ await testRunner.ThenAsync("the response status should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 19
-    await testRunner.AndAsync("the response time should be less than 500 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+ await testRunner.AndAsync("the response time should be less than 500 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 20
-    await testRunner.AndAsync("the booking details should match what I created", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+ await testRunner.AndAsync("the booking details should match what I created", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 21
  await testRunner.AndAsync("the response matches the \"BookingCreatedResponse\" schema", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
@@ -228,7 +228,7 @@ this.ScenarioInitialize(scenarioInfo);
 #line 3
 await this.FeatureBackgroundAsync();
 #line hidden
-                global::Reqnroll.Table table2 = new global::Reqnroll.Table(new string[] {
+                global::Reqnroll.Table table4 = new global::Reqnroll.Table(new string[] {
                             "firstname",
                             "lastname",
                             "totalprice",
@@ -236,7 +236,7 @@ await this.FeatureBackgroundAsync();
                             "checkin",
                             "checkout",
                             "additionalneeds"});
-                table2.AddRow(new string[] {
+                table4.AddRow(new string[] {
                             "Jane",
                             "Smith",
                             "200",
@@ -245,19 +245,19 @@ await this.FeatureBackgroundAsync();
                             "2025-09-05",
                             "Lunch"});
 #line 24
-    await testRunner.GivenAsync("I have updated booking details with:", ((string)(null)), table2, "Given ");
+ await testRunner.GivenAsync("I have updated booking details with:", ((string)(null)), table4, "Given ");
 #line hidden
 #line 27
-    await testRunner.WhenAsync("I send an update booking request for that ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+ await testRunner.WhenAsync("I send an update booking request for that ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 28
-    await testRunner.ThenAsync("the response status should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+ await testRunner.ThenAsync("the response status should be 200", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 29
-    await testRunner.AndAsync("the response time should be less than 500 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+ await testRunner.AndAsync("the response time should be less than 500 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 30
-    await testRunner.AndAsync("the booking details should match what I updated", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+ await testRunner.AndAsync("the booking details should match what I updated", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 31
  await testRunner.AndAsync("the response matches the \"BookingCreatedResponse\" schema", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
@@ -287,13 +287,13 @@ this.ScenarioInitialize(scenarioInfo);
 await this.FeatureBackgroundAsync();
 #line hidden
 #line 34
-    await testRunner.WhenAsync("I send a delete booking request for that ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+ await testRunner.WhenAsync("I send a delete booking request for that ID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 35
-    await testRunner.ThenAsync("the response status should be 204", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+ await testRunner.ThenAsync("the response status should be 204", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 36
-    await testRunner.AndAsync("the response time should be less than 500 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+ await testRunner.AndAsync("the response time should be less than 500 ms", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

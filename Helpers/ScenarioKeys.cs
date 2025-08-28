@@ -7,5 +7,6 @@
     public const string BookingCreatedResponse = "BookingCreatedResponse";
     public const string LastStatusCode = "LastStatusCode";
     public const string LastElapsedMs = "LastElapsedMs";
-    public const string LastResponse = "LastResponse"; 
+    public const string LastResponse = "LastResponse";
+    public const string CurrentBookingTable = "CurrentBookingTable";
 }

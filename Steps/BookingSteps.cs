@@ -40,17 +40,17 @@ public class BookingSteps
 
     #endregion
 
-    #region When Steps
+    #region When Steps (Happy Paths)
 
-    [When(@"I send a create booking request")]
+    [When("I send a create booking request")]
     public async Task WhenISendACreateBookingRequest()
     {
         var booking = _scenarioContext.GetData<Booking>(ScenarioKeys.CurrentBooking);
-        var (responseData, rawResponse, elapsedMs) = await _bookingClient.CreateBookingAsync(booking);
+        var (data, raw, elapsedMs) = await _bookingClient.CreateBookingAsync(booking);
 
-        _scenarioContext.SetData(ScenarioKeys.BookingCreatedResponse, responseData);
-        _scenarioContext.SetData(ScenarioKeys.CreatedBooking, responseData.Booking);
-        _scenarioContext.SetData(ScenarioKeys.LastStatusCode, rawResponse.StatusCode);
+        _scenarioContext.SetData(ScenarioKeys.BookingCreatedResponse, data);
+        _scenarioContext.SetData(ScenarioKeys.CreatedBooking, data.Booking);
+        _scenarioContext.SetData(ScenarioKeys.LastStatusCode, raw.StatusCode);
         _scenarioContext.SetData(ScenarioKeys.LastElapsedMs, elapsedMs);
     }
 
@@ -58,10 +58,10 @@ public class BookingSteps
     public async Task WhenISendAGetBookingRequestForThatId()
     {
         var createResponse = _scenarioContext.GetData<BookingCreatedResponse>(ScenarioKeys.BookingCreatedResponse);
-        var (retrievedBooking, rawResponse, elapsedMs) = await _bookingClient.GetBookingAsync(createResponse.BookingId);
+        var (data, raw, elapsedMs) = await _bookingClient.GetBookingAsync(createResponse.BookingId);
 
-        _scenarioContext.SetData(ScenarioKeys.RetrievedBooking, retrievedBooking);
-        _scenarioContext.SetData(ScenarioKeys.LastStatusCode, rawResponse.StatusCode);
+        _scenarioContext.SetData(ScenarioKeys.RetrievedBooking, data);
+        _scenarioContext.SetData(ScenarioKeys.LastStatusCode, raw.StatusCode);
         _scenarioContext.SetData(ScenarioKeys.LastElapsedMs, elapsedMs);
     }
 
@@ -71,7 +71,7 @@ public class BookingSteps
         var createResponse = _scenarioContext.GetData<BookingCreatedResponse>(ScenarioKeys.BookingCreatedResponse);
         var updatedBooking = _scenarioContext.GetData<Booking>(ScenarioKeys.UpdatedBooking);
 
-        var (updatedData, rawResponse, elapsedMs) = await _bookingClient.UpdateBookingAsync(createResponse.BookingId, updatedBooking);
+        var (updatedData, raw, elapsedMs) = await _bookingClient.UpdateBookingAsync(createResponse.BookingId, updatedBooking);
 
         _scenarioContext.SetData(ScenarioKeys.BookingCreatedResponse, new BookingCreatedResponse
         {
@@ -79,7 +79,7 @@ public class BookingSteps
             Booking = updatedData
         });
         _scenarioContext.SetData(ScenarioKeys.RetrievedBooking, updatedData);
-        _scenarioContext.SetData(ScenarioKeys.LastStatusCode, rawResponse.StatusCode);
+        _scenarioContext.SetData(ScenarioKeys.LastStatusCode, raw.StatusCode);
         _scenarioContext.SetData(ScenarioKeys.LastElapsedMs, elapsedMs);
     }
 
@@ -89,6 +89,46 @@ public class BookingSteps
         var createResponse = _scenarioContext.GetData<BookingCreatedResponse>(ScenarioKeys.BookingCreatedResponse);
         var (response, elapsedMs) = await _bookingClient.DeleteBookingAsync(createResponse.BookingId);
 
+        _scenarioContext.SetData(ScenarioKeys.LastStatusCode, response.StatusCode);
+        _scenarioContext.SetData(ScenarioKeys.LastElapsedMs, elapsedMs);
+    }
+
+    #endregion
+
+    #region When Steps (Negative & Edge Cases)
+
+    [When("I send a create booking request without auth")]
+    public async Task WhenISendACreateBookingRequestWithoutAuth()
+    {
+        var booking = _scenarioContext.GetData<Booking>(ScenarioKeys.CurrentBooking);
+        var (response, elapsedMs) = await _bookingClient.CreateBookingSafeAsync(booking,requiresAuth:false);
+
+        _scenarioContext.SetData(ScenarioKeys.LastStatusCode, response.StatusCode);
+        _scenarioContext.SetData(ScenarioKeys.LastElapsedMs, elapsedMs);
+    }
+
+    [When(@"I send a get booking request for ID (.*)")]
+    public async Task WhenISendAGetBookingRequestForId(int bookingId)
+    {
+        var (response, elapsedMs) = await _bookingClient.GetBookingSafeAsync(bookingId);
+        _scenarioContext.SetData(ScenarioKeys.LastStatusCode, response.StatusCode);
+        _scenarioContext.SetData(ScenarioKeys.LastElapsedMs, elapsedMs);
+    }
+
+    [When(@"I send an update booking request for ID (.*)")]
+    public async Task WhenISendAnUpdateBookingRequestForId(int bookingId)
+    {
+        var updatedBooking = _scenarioContext.GetData<Booking>(ScenarioKeys.UpdatedBooking);
+        var (response, elapsedMs) = await _bookingClient.UpdateBookingSafeAsync(bookingId, updatedBooking);
+
+        _scenarioContext.SetData(ScenarioKeys.LastStatusCode, response.StatusCode);
+        _scenarioContext.SetData(ScenarioKeys.LastElapsedMs, elapsedMs);
+    }
+
+    [When(@"I send a delete booking request for ID (.*)")]
+    public async Task WhenISendADeleteBookingRequestForId(int bookingId)
+    {
+        var (response, elapsedMs) = await _bookingClient.DeleteBookingSafeAsync(bookingId);
         _scenarioContext.SetData(ScenarioKeys.LastStatusCode, response.StatusCode);
         _scenarioContext.SetData(ScenarioKeys.LastElapsedMs, elapsedMs);
     }
@@ -132,13 +172,11 @@ public class BookingSteps
     {
         var response = _scenarioContext.GetData<object>(schemaName);
         Assert.That(response, Is.Not.Null, $"Response for schema '{schemaName}' is null.");
-
         SchemaValidationHelper.ValidateAgainstSchema(response);
-
         _logger.LogInformation("Schema validation passed for '{SchemaName}'.", schemaName);
     }
 
-    [Then(@"the response time should be less than {int} ms")]
+    [Then(@"the response time should be less than (.*) ms")]
     public void ThenTheResponseTimeShouldBeUnder(int maxMilliseconds)
     {
         var elapsedMs = _scenarioContext.GetData<long>(ScenarioKeys.LastElapsedMs);
