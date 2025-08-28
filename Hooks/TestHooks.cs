@@ -4,6 +4,7 @@ using Reqnroll;
 using Reqnroll.BoDi;
 using RestfulBookerTests.Clients;
 using RestfulBookerTests.Configuration;
+using RestfulBookerTests.Extensions; // for GetRequiredServiceSafe
 using RestfulBookerTests.Helpers;
 using RestfulBookerTests.Utils;
 
@@ -11,6 +12,7 @@ using RestfulBookerTests.Utils;
 public sealed class TestHooks
 {
     private readonly IObjectContainer _container;
+    private ServiceProvider? _provider;
 
     public TestHooks(IObjectContainer container)
     {
@@ -20,7 +22,6 @@ public sealed class TestHooks
     [BeforeTestRun]
     public static void BeforeTestRun()
     {
-        // Optionally load environment variables
         DotNetEnv.Env.Load();
     }
 
@@ -30,19 +31,31 @@ public sealed class TestHooks
         var services = new ServiceCollection();
         services.AddRestfulBookerServices();
 
-        var provider = services.BuildServiceProvider();
+        _provider = services.BuildServiceProvider();
 
-        // Register DI objects to SpecFlow container
-        _container.RegisterInstanceAs(provider.GetRequiredService<ConfigManager>());
-        _container.RegisterInstanceAs(provider.GetRequiredService<LoggingHelper>());
+        // Register DI objects to SpecFlow container using safe resolution
+        _container.RegisterInstanceAs(_provider.GetRequiredServiceSafe<ConfigManager>("BeforeScenario - ConfigManager"));
+        _container.RegisterInstanceAs(_provider.GetRequiredServiceSafe<LoggingHelper>("BeforeScenario - LoggingHelper"));
 
         // Clients
-        _container.RegisterInstanceAs(provider.GetRequiredService<BookingClient>());
-        _container.RegisterInstanceAs(provider.GetRequiredService<BaseClient>());
+        _container.RegisterInstanceAs(_provider.GetRequiredServiceSafe<BookingClient>("BeforeScenario - BookingClient"));
+        _container.RegisterInstanceAs(_provider.GetRequiredServiceSafe<BaseClient>("BeforeScenario - BaseClient"));
 
         // Logger for steps
-        _container.RegisterInstanceAs(provider.GetRequiredService<ILogger<BookingSteps>>());
+        _container.RegisterInstanceAs(_provider.GetRequiredServiceSafe<ILogger<BookingSteps>>("BeforeScenario - ILogger<BookingSteps>"));
     }
 
-   
+    [AfterScenario]
+    public void AfterScenario()
+    {
+        if (_provider != null)
+        {
+            // Dispose all scoped/transient services that implement IDisposable
+            if (_provider is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+            _provider = null;
+        }
+    }
 }
