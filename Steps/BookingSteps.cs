@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Reqnroll;
 using RestfulBookerTests.Clients;
+using RestfulBookerTests.Extensions;
 using RestfulBookerTests.Helpers;
 using RestfulBookerTests.Models;
 using System.Net;
@@ -49,8 +50,6 @@ public class BookingSteps
     public async Task WhenISendACreateBookingRequest()
     {
         var booking = _scenarioContext.GetData<Booking>(ScenarioKeys.CurrentBooking);
-        Assert.That(booking, Is.Not.Null, "Current booking payload is null.");
-
         var (responseData, rawResponse, elapsedMs) = await _bookingClient.CreateBookingAsync(booking);
 
         _scenarioContext.SetData(ScenarioKeys.BookingCreatedResponse, responseData);
@@ -63,8 +62,6 @@ public class BookingSteps
     public async Task WhenISendAGetBookingRequestForThatId()
     {
         var createResponse = _scenarioContext.GetData<BookingCreatedResponse>(ScenarioKeys.BookingCreatedResponse);
-        Assert.That(createResponse, Is.Not.Null, "Booking creation response is null.");
-
         var (retrievedBooking, rawResponse, elapsedMs) = await _bookingClient.GetBookingAsync(createResponse.BookingId);
 
         _scenarioContext.SetData(ScenarioKeys.RetrievedBooking, retrievedBooking);
@@ -78,21 +75,13 @@ public class BookingSteps
         var createResponse = _scenarioContext.GetData<BookingCreatedResponse>(ScenarioKeys.BookingCreatedResponse);
         var updatedBooking = _scenarioContext.GetData<Booking>(ScenarioKeys.UpdatedBooking);
 
-        Assert.Multiple(() =>
-        {
-            Assert.That(createResponse, Is.Not.Null, "Booking creation response is null.");
-            Assert.That(updatedBooking, Is.Not.Null, "Updated booking payload is null.");
-        });
-
         var (updatedData, rawResponse, elapsedMs) = await _bookingClient.UpdateBookingAsync(createResponse.BookingId, updatedBooking);
 
-        var wrappedResponse = new BookingCreatedResponse
+        _scenarioContext.SetData(ScenarioKeys.BookingCreatedResponse, new BookingCreatedResponse
         {
             BookingId = createResponse.BookingId,
             Booking = updatedData
-        };
-
-        _scenarioContext.SetData(ScenarioKeys.BookingCreatedResponse, wrappedResponse);
+        });
         _scenarioContext.SetData(ScenarioKeys.RetrievedBooking, updatedData);
         _scenarioContext.SetData(ScenarioKeys.LastStatusCode, rawResponse.StatusCode);
         _scenarioContext.SetData(ScenarioKeys.LastElapsedMs, elapsedMs);
@@ -102,8 +91,6 @@ public class BookingSteps
     public async Task WhenISendADeleteBookingRequestForThatID()
     {
         var createResponse = _scenarioContext.GetData<BookingCreatedResponse>(ScenarioKeys.BookingCreatedResponse);
-        Assert.That(createResponse, Is.Not.Null, "Booking creation response is null.");
-
         var (response, elapsedMs) = await _bookingClient.DeleteBookingAsync(createResponse.BookingId);
 
         _scenarioContext.SetData(ScenarioKeys.LastStatusCode, response.StatusCode);
@@ -118,8 +105,7 @@ public class BookingSteps
     public void ThenTheBookingIdShouldBeReturned()
     {
         var createResponse = _scenarioContext.GetData<BookingCreatedResponse>(ScenarioKeys.BookingCreatedResponse);
-        Assert.That(createResponse, Is.Not.Null, "Booking creation response is null.");
-        Assert.That(createResponse.BookingId, Is.GreaterThan(0), "Booking ID should be greater than zero");
+        Assert.That(createResponse.BookingId, Is.GreaterThan(0));
     }
 
     [Then(@"the response status should be (.*)")]
@@ -148,31 +134,12 @@ public class BookingSteps
     [Then(@"the response matches the ""(.*)"" schema")]
     public void ThenTheResponseMatchesSchema(string schemaName)
     {
-        if (!_scenarioContext.TryGetData<object>(schemaName, out var lastResponseBody) || lastResponseBody == null)
-        {
-            Assert.Fail($"Response body for '{schemaName}' not found in ScenarioContext.");
-        }
+        var response = _scenarioContext.GetData<object>(schemaName);
+        Assert.That(response, Is.Not.Null, $"Response for schema '{schemaName}' is null.");
 
-        var modelType = Assembly.GetExecutingAssembly()
-            .GetTypes()
-            .FirstOrDefault(t => t.Name.Equals(schemaName, StringComparison.OrdinalIgnoreCase));
+        SchemaValidationHelper.ValidateAgainstSchema(response);
 
-        Assert.That(modelType, Is.Not.Null, $"Type '{schemaName}' not found in current assembly.");
-
-        string schemaJson = SchemaGeneratorHelper.GenerateSchemaAsString(modelType!);
-        var schema = JsonSerializer.Deserialize<JsonSchema>(schemaJson);
-        Assert.That(schema, Is.Not.Null, "Schema deserialization failed.");
-
-        var jsonString = JsonSerializer.Serialize(lastResponseBody);
-        using var jsonDoc = JsonDocument.Parse(jsonString);
-
-        var result = schema!.Evaluate(jsonDoc.RootElement);
-
-        Assert.That(result.IsValid, Is.True,
-            $"Schema validation failed for '{schemaName}':\n" +
-            string.Join("\n", result.Details
-                .Where(d => d.HasErrors)
-                .SelectMany(d => d.Errors!.Select(e => $"{d.InstanceLocation}: {e.Key} - {e.Value}"))));
+        _logger.LogInformation("Schema validation passed for '{SchemaName}'.", schemaName);
     }
 
     [Then(@"the response time should be less than {int} ms")]
