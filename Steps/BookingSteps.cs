@@ -1,13 +1,9 @@
-﻿using Json.Schema;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Reqnroll;
 using RestfulBookerTests.Clients;
-using RestfulBookerTests.Extensions;
 using RestfulBookerTests.Helpers;
 using RestfulBookerTests.Models;
 using System.Net;
-using System.Reflection;
-using System.Text.Json;
 
 [Binding]
 public class BookingSteps

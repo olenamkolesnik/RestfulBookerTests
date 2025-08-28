@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using RestfulBookerTests.Utils;
 using RestSharp;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -17,22 +18,33 @@ public class LoggingHelper
         _config = config;
     }
 
+    /// <summary>
+    /// Logs HTTP request/response with detailed metrics: elapsed time, retries, headers, sanitized content.
+    /// </summary>
     public void LogRequestAndResponse(
         ILogger logger,
         RestClient client,
         RestRequest request,
         RestResponse response,
         long elapsedMs,
-        string? token)
+        string? token,
+        int attempt = 1,
+        int maxRetries = 1)
     {
         bool isAuth = request.Resource.Contains("/auth", StringComparison.OrdinalIgnoreCase);
 
-        logger.LogInformation("HTTP {Method} {Url} => {StatusCode} in {Elapsed} ms",
+        // Summary log
+        logger.LogInformation(
+            "HTTP {Method} {Url} => {StatusCode} in {Elapsed} ms (Attempt {Attempt}/{MaxRetries})",
             request.Method,
             client.BuildUri(request),
             response.StatusCode,
-            elapsedMs);
+            elapsedMs,
+            attempt,
+            maxRetries
+        );
 
+        // Skip detailed logging if disabled and successful
         if (!_config.EnableDetailedLogging && response.IsSuccessful)
             return;
 
@@ -46,6 +58,7 @@ public class LoggingHelper
                     return $"{p.Name}: {Placeholder}";
                 return $"{p.Name}: {p.Value}";
             });
+
         string headersString = sanitizedHeaders.Any() ? string.Join(", ", sanitizedHeaders) : "[None]";
 
         object? requestBody = request.Parameters.FirstOrDefault(p => p.Type == ParameterType.RequestBody)?.Value;

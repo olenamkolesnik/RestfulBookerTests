@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace RestfulBookerTests.Utils;
 
@@ -12,11 +11,20 @@ public class ConfigManager
         _config = config;
     }
 
-    public string BaseUrl => _config["Api:BaseUrl"] ?? throw new InvalidOperationException("BaseUrl not configured.");
+    // API base URL
+    public string BaseUrl => _config["Api:BaseUrl"]
+        ?? throw new InvalidOperationException("BaseUrl not configured.");
+
+    // Logging options
     public int MaxContentLength => _config.GetValue("Logging:MaxContentLength", 1000);
     public bool DisableContentForAuth => _config.GetValue("Logging:DisableContentForAuth", true);
     public bool EnableDetailedLogging => _config.GetValue("Logging:EnableDetailedLogging", true);
 
+    // Retry / timeout settings
+    public int MaxRetries => _config.GetValue("Http:MaxRetries", 3);
+    public int RetryDelayMs => _config.GetValue("Http:RetryDelayMs", 500);
+
+    // Authentication
     public string Username => GetEnvironmentVariable("Username");
     public string Password => GetEnvironmentVariable("Password");
 
