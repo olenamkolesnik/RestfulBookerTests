@@ -9,6 +9,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      USERNAME: ${{ secrets.USERNAME }}
+      PASSWORD: ${{ secrets.PASSWORD }}
+      LOG_LEVEL: INFO
 
     steps:
       # 1. Checkout the repo
@@ -25,14 +29,10 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      # 4. Build the project
-      - name: Build
-        run: dotnet build --no-restore --configuration Release
-
       # 5. Run tests with Allure results
       - name: Run Tests
         run: |
-          dotnet test --no-build --configuration Release
+          dotnet test
 
       # 6. Install Allure CLI
       - name: Install Allure CLI
