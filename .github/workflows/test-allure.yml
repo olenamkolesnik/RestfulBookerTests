@@ -32,7 +32,7 @@ jobs:
       - name: Check Allure results folder
         run: |
          echo "Listing files in Allure results folder"
-         ls -la ./bin/Debug || echo "Folder not found"
+         ls -la ./bin || echo "Folder not found"
 
       - name: Check Allure results folder
         run: |
