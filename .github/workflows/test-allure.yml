@@ -31,9 +31,10 @@ jobs:
 
       - name: Install Allure CLI
         run: |
-          curl -o allure.zip -L https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.zip
-          unzip -o allure.zip -d $HOME/allure
-          echo "$HOME/allure/bin" >> $GITHUB_PATH
+            sudo apt-add-repository ppa:qameta/allure -y
+            sudo apt-get update
+            sudo apt-get install allure -y
+
 
       - name: Generate Allure report
         run: |
