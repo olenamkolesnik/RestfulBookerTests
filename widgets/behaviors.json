@@ -1,1 +1,1 @@
-{"total":0,"items":[]}
+{"total":3,"items":[{"uid":"51f582ac37d84bcb9f72a70826af166b","name":"Booking Management - Happy Paths","statistic":{"failed":1,"broken":0,"skipped":0,"passed":3,"unknown":0,"total":4}},{"uid":"172fd1ca9fbd8316579724fad553c5c7","name":"Booking Management - Edge Cases","statistic":{"failed":0,"broken":0,"skipped":0,"passed":7,"unknown":0,"total":7}},{"uid":"df465881cf41e9be97c60fd3e67e04e3","name":"Booking Management - Negative Scenarios","statistic":{"failed":0,"broken":0,"skipped":0,"passed":7,"unknown":0,"total":7}}]}
