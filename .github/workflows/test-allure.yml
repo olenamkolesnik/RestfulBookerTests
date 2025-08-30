@@ -29,14 +29,20 @@ jobs:
         run: dotnet test --configuration Release
         continue-on-error: true
 
-      - name: Publish Allure results
+      - name: Install Allure CLI
         run: |
-          mkdir -p allure-results
-          # This assumes your Reqnroll test project is setup to output allure results there
-          dotnet run --project ./RestfulBookerTests --results-directory ./allure-results
+          curl -o allure.zip -L https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.zip
+          unzip -o allure.zip -d $HOME/allure
+          echo "$HOME/allure/bin" >> $GITHUB_PATH
+
+      - name: Generate Allure report
+        run: |
+          allure generate ./RestfulBookerTests/bin/Debug/net9.0/allure-results -o ./allure-report --clean
 
       - name: Deploy Allure report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./allure-results
+          publish_dir: ./allure-report
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
