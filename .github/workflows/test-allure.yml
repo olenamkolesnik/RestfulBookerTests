@@ -29,13 +29,30 @@ jobs:
         run: dotnet test --configuration Release
         continue-on-error: true
 
-       # Upload Allure results so the next step can generate report
+      - name: Check Allure results folder
+        run: |
+         echo "Listing files in Allure results folder"
+         ls -la ./RestfulBookerTests/bin/Debug/net9.0/allure-results || echo "Folder not found"
+
+      - name: Check Allure results folder
+        run: |
+         echo "Listing files in Allure results folder2"
+         ls -la ./bin/Debug/net9.0/allure-results || echo "Folder not found"
+
+      - name: Check Allure results folder
+        run: |
+         echo "Listing files in Allure results folder3"
+         ls -la . || echo "Folder not found"
+
+
       - name: Upload Allure results as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-results
           path: bin/Debug/net9.0/allure-results
+
+       
 
       # Checkout gh-pages branch to load history (optional)
       - name: Load test report history
