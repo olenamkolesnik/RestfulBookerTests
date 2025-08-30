@@ -29,13 +29,13 @@ jobs:
         run: dotnet test --configuration Release
         continue-on-error: true
 
-            # Upload Allure results so the next step can generate report
+       # Upload Allure results so the next step can generate report
       - name: Upload Allure results as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-results
-          path: ./RestfulBookerTests/bin/Debug/net9.0/allure-results
+          path: bin/Debug/net9.0/allure-results
 
       # Checkout gh-pages branch to load history (optional)
       - name: Load test report history
@@ -53,7 +53,7 @@ jobs:
         with:
           gh_pages: gh-pages
           allure_history: allure-history
-          allure_results: ./RestfulBookerTests/bin/Debug/net9.0/allure-results
+          allure_results: /bin/Debug/net9.0/allure-results
 
       # Publish Allure report to GitHub Pages
       - name: Publish Allure report
