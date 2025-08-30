@@ -50,7 +50,7 @@ jobs:
         with:
           gh_pages: gh-pages
           allure_history: allure-history
-          allure_results: /bin/Release/net9.0/allure-results
+          allure_results: bin/Release/net9.0/allure-results
           
       - name: Publish Allure report
         if: always()
