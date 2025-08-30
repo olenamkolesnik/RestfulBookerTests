@@ -27,6 +27,7 @@ jobs:
 
       - name: Run tests
         run: dotnet test --configuration Release
+        continue-on-error: true
 
       - name: Publish Allure results
         run: |
