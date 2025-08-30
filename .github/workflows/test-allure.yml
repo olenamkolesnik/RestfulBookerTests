@@ -29,21 +29,37 @@ jobs:
         run: dotnet test --configuration Release
         continue-on-error: true
 
-      - name: Install Allure CLI
-        run: |
-            sudo apt-add-repository ppa:qameta/allure -y
-            sudo apt-get update
-            sudo apt-get install allure -y
+            # Upload Allure results so the next step can generate report
+      - name: Upload Allure results as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: ./RestfulBookerTests/bin/Debug/net9.0/allure-results
 
+      # Checkout gh-pages branch to load history (optional)
+      - name: Load test report history
+        if: always()
+        uses: actions/checkout@v3
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
 
-      - name: Generate Allure report
-        run: |
-          allure generate ./RestfulBookerTests/bin/Debug/net9.0/allure-results -o ./allure-report --clean
+      # Build the Allure HTML report using pre-bundled action
+      - name: Build Allure report
+        if: always()
+        uses: simple-elf/allure-report-action@v1.7
+        with:
+          gh_pages: gh-pages
+          allure_history: allure-history
+          allure_results: ./RestfulBookerTests/bin/Debug/net9.0/allure-results
 
-      - name: Deploy Allure report to GitHub Pages
+      # Publish Allure report to GitHub Pages
+      - name: Publish Allure report
+        if: always()
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./allure-report
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
+          publish_branch: gh-pages
+          publish_dir: allure-report
