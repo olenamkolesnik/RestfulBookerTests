@@ -24,18 +24,19 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore
-
+      
       - name: Run tests
+        working-directory: RestfulBookerTests
         run: dotnet test --configuration Release
         continue-on-error: true
-        
+
       - name: Set allure-results path
         id: set-path
         run: |
-          if [ -d "RestfulBookerTests/bin/Release/net9.0/allure-results" ]; then
-            echo "ALLURE_RESULTS=RestfulBookerTests/bin/Release/net9.0/allure-results" >> $GITHUB_ENV
-          elif [ -d "RestfulBookerTests/bin/Debug/net9.0/allure-results" ]; then
-            echo "ALLURE_RESULTS=RestfulBookerTests/bin/Debug/net9.0/allure-results" >> $GITHUB_ENV
+          if [ -d "bin/Release/net9.0/allure-results" ]; then
+            echo "ALLURE_RESULTS=bin/Release/net9.0/allure-results" >> $GITHUB_ENV
+          elif [ -d "bin/Debug/net9.0/allure-results" ]; then
+            echo "ALLURE_RESULTS=bin/Debug/net9.0/allure-results" >> $GITHUB_ENV
           else
             echo "No allure-results folder found"
             exit 1

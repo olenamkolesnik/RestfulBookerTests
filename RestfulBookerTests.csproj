@@ -9,6 +9,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Content Remove="C:\Users\Olena\.nuget\packages\allure.reqnroll\2.12.1\contentFiles\any\netstandard2.0\allureConfig.Template.json" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Allure.Reqnroll" Version="2.12.1" />
 		<PackageReference Include="coverlet.collector" Version="6.0.2" />
 		<PackageReference Include="DotNetEnv" Version="3.1.1" />
@@ -54,6 +58,5 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
-
 
 </Project>
