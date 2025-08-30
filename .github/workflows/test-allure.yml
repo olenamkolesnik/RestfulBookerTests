@@ -1,4 +1,4 @@
-﻿name: Run Tests & Publish Allure Report
+﻿name: Reqnroll Allure Tests
 
 on:
   push:
@@ -12,43 +12,30 @@ jobs:
     env:
       USERNAME: ${{ secrets.USERNAME }}
       PASSWORD: ${{ secrets.PASSWORD }}
-      LOG_LEVEL: INFO
 
     steps:
-      # 1. Checkout the repo
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Setup .NET
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: 9.0.x
 
-      # 3. Restore dependencies
       - name: Restore dependencies
         run: dotnet restore
 
-      # 5. Run tests with Allure results
-      - name: Run Tests
-        run: |
-          dotnet test
+      - name: Run tests
+        run: dotnet test --configuration Release
 
-      # 6. Install Allure CLI
-      - name: Install Allure CLI
+      - name: Publish Allure results
         run: |
-          sudo apt-add-repository ppa:qameta/allure -y
-          sudo apt update
-          sudo apt install allure -y
+          mkdir -p allure-results
+          # This assumes your Reqnroll test project is setup to output allure results there
+          dotnet run --project ./RestfulBookerTests --results-directory ./allure-results
 
-      # 7. Generate Allure Report
-      - name: Generate Allure Report
-        run: |
-          allure generate allure-results --clean -o allure-report
-
-      # 8. Deploy to GitHub Pages
-      - name: Deploy Allure Report to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Deploy Allure report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v5
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./allure-report
+          publish_dir: ./allure-results
