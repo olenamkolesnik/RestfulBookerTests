@@ -32,12 +32,12 @@ jobs:
       - name: Check Allure results folder
         run: |
          echo "Listing files in Allure results folder"
-         ls -la ./bin || echo "Folder not found"
+         ls -la ./bin/Release || echo "Folder not found"
 
       - name: Check Allure results folder
         run: |
          echo "Listing files in Allure results folder2"
-         ls -la ./bin/Debug/net9.0/ || echo "Folder not found"
+         ls -la ./bin/Release/net9.0/ || echo "Folder not found"
 
       - name: Check Allure results folder
         run: |
