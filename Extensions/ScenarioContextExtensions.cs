@@ -1,6 +1,6 @@
 ﻿using Reqnroll;
 
-namespace RestfulBookerTests.Helpers
+namespace RestfulBookerTests.Extensions
 {
     public static class ScenarioContextExtensions
     {

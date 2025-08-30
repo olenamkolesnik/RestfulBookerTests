@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Reqnroll;
 using RestfulBookerTests.Clients;
+using RestfulBookerTests.Extensions;
 using RestfulBookerTests.Helpers;
 using RestfulBookerTests.Models;
 using System.Net;

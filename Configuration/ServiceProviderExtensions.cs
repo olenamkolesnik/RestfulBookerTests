@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 
-namespace RestfulBookerTests.Extensions
+namespace RestfulBookerTests.Configuration
 {
     public static class ServiceProviderExtensions
     {
