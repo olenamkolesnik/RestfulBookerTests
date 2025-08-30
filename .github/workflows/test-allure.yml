@@ -29,32 +29,13 @@ jobs:
         run: dotnet test --configuration Release
         continue-on-error: true
 
-      - name: Check Allure results folder
-        run: |
-         echo "Listing files in Allure results folder"
-         ls -la ./bin/Release || echo "Folder not found"
-
-      - name: Check Allure results folder
-        run: |
-         echo "Listing files in Allure results folder2"
-         ls -la ./bin/Release/net9.0/ || echo "Folder not found"
-
-      - name: Check Allure results folder
-        run: |
-         echo "Listing files in Allure results folder3"
-         ls -la . || echo "Folder not found"
-
-
       - name: Upload Allure results as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-results
-          path: bin/Debug/net9.0/allure-results
-
-       
-
-      # Checkout gh-pages branch to load history (optional)
+          path: bin/Release/net9.0/allure-results       
+          
       - name: Load test report history
         if: always()
         uses: actions/checkout@v3
@@ -63,16 +44,14 @@ jobs:
           ref: gh-pages
           path: gh-pages
 
-      # Build the Allure HTML report using pre-bundled action
       - name: Build Allure report
         if: always()
         uses: simple-elf/allure-report-action@v1.7
         with:
           gh_pages: gh-pages
           allure_history: allure-history
-          allure_results: /bin/Debug/net9.0/allure-results
-
-      # Publish Allure report to GitHub Pages
+          allure_results: /bin/Release/net9.0/allure-results
+          
       - name: Publish Allure report
         if: always()
         uses: peaceiris/actions-gh-pages@v3
