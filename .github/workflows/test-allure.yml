@@ -28,14 +28,26 @@ jobs:
       - name: Run tests
         run: dotnet test --configuration Release
         continue-on-error: true
+        
+      - name: Set allure-results path
+        id: set-path
+        run: |
+          if [ -d "RestfulBookerTests/bin/Release/net9.0/allure-results" ]; then
+            echo "ALLURE_RESULTS=RestfulBookerTests/bin/Release/net9.0/allure-results" >> $GITHUB_ENV
+          elif [ -d "RestfulBookerTests/bin/Debug/net9.0/allure-results" ]; then
+            echo "ALLURE_RESULTS=RestfulBookerTests/bin/Debug/net9.0/allure-results" >> $GITHUB_ENV
+          else
+            echo "No allure-results folder found"
+            exit 1
+          fi
 
       - name: Upload Allure results as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-results
-          path: bin/Release/net9.0/allure-results       
-          
+          path: ${{ env.ALLURE_RESULTS }}
+
       - name: Load test report history
         if: always()
         uses: actions/checkout@v3
@@ -50,8 +62,8 @@ jobs:
         with:
           gh_pages: gh-pages
           allure_history: allure-history
-          allure_results: bin/Release/net9.0/allure-results
-          
+          allure_results: ${{ env.ALLURE_RESULTS }}
+
       - name: Publish Allure report
         if: always()
         uses: peaceiris/actions-gh-pages@v3
