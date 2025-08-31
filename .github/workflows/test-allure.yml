@@ -28,26 +28,14 @@ jobs:
       - name: Run tests
         working-directory: RestfulBookerTests
         run: dotnet test --configuration Release
-        continue-on-error: true
-
-      - name: Set allure-results path
-        id: set-path
-        run: |
-          if [ -d "bin/Release/net9.0/allure-results" ]; then
-            echo "ALLURE_RESULTS=bin/Release/net9.0/allure-results" >> $GITHUB_ENV
-          elif [ -d "bin/Debug/net9.0/allure-results" ]; then
-            echo "ALLURE_RESULTS=bin/Debug/net9.0/allure-results" >> $GITHUB_ENV
-          else
-            echo "No allure-results folder found"
-            exit 1
-          fi
+        continue-on-error: true     
 
       - name: Upload Allure results as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-results
-          path: ${{ env.ALLURE_RESULTS }}
+          path: bin/Release/net9.0/allure-results
 
       - name: Load test report history
         if: always()
@@ -63,7 +51,7 @@ jobs:
         with:
           gh_pages: gh-pages
           allure_history: allure-history
-          allure_results: ${{ env.ALLURE_RESULTS }}
+          allure_results: bin/Release/net9.0/allure-results
 
       - name: Publish Allure report
         if: always()
