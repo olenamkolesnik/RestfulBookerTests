@@ -26,7 +26,6 @@ jobs:
         run: dotnet restore
       
       - name: Run tests
-        working-directory: RestfulBookerTests
         run: dotnet test --configuration Release
         continue-on-error: true     
 
