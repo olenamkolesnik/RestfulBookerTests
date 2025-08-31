@@ -1,7 +1,7 @@
 # **RestfulBooker Test Automation Framework**
 
 ![.NET](https://img.shields.io/badge/.NET-9.0-blue)  
-![Tests](https://img.shields.io/github/actions/workflow/status/olenamkolesnik/RestfulBookerTests/reqnroll-allure.yml?label=Tests&logo=github)  
+![Tests](https://img.shields.io/github/actions/workflow/status/olenamkolesnik/RestfulBookerTests/test-allure.yml?label=Tests&logo=github)  
 [![Allure Report](https://img.shields.io/badge/Allure-Report-brightgreen?style=flat&logo=allure)](https://olenamkolesnik.github.io/RestfulBookerTests/)
 
 ---
