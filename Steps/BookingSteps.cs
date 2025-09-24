@@ -12,15 +12,18 @@ public class BookingSteps
     private readonly ScenarioContext _scenarioContext;
     private readonly BookingClient _bookingClient;
     private readonly ILogger<BookingSteps> _logger;
+    private readonly BookingDbHelper _dbHelper;
 
     public BookingSteps(
         ScenarioContext scenarioContext,
         BookingClient bookingClient,
-        ILogger<BookingSteps> logger)
+        ILogger<BookingSteps> logger,
+        BookingDbHelper dbHelper)
     {
         _scenarioContext = scenarioContext;
         _bookingClient = bookingClient;
         _logger = logger;
+        _dbHelper = dbHelper;
     }
 
     #region Given Steps
@@ -183,6 +186,16 @@ public class BookingSteps
         var elapsedMs = _scenarioContext.GetData<long>(ScenarioKeys.LastElapsedMs);
         AssertionHelper.AssertResponseTime(elapsedMs, maxMilliseconds);
     }
+
+    [Then("the booking should exist in the database")]
+    public async Task ThenTheBookingShouldExistInTheDatabase()
+    {
+        var bookingResponse = _scenarioContext.GetData<BookingCreatedResponse>(ScenarioKeys.BookingCreatedResponse);
+        var bookingFromDb = await _dbHelper.GetBookingAsync(bookingResponse.Booking.Firstname, bookingResponse.Booking.Lastname);
+
+        AssertionHelper.AssertBookingEquality(bookingResponse.Booking, bookingFromDb);
+    }
+
 
     #endregion
 

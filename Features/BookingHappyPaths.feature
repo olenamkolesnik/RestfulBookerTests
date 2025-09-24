@@ -12,6 +12,7 @@ Scenario: Create a new booking
 	And the booking ID should be returned
 	And the booking details should match what I created
 	And the response matches the "BookingCreatedResponse" schema
+	And the booking should exist in the database
 
 Scenario: Get booking by ID
 	When I send a get booking request for that ID

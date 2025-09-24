@@ -1,9 +1,11 @@
-﻿using Reqnroll;
-using Reqnroll.BoDi;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Reqnroll;
+using Reqnroll.BoDi;
 using RestfulBookerTests.Clients;
 using RestfulBookerTests.Configuration;
+using RestfulBookerTests.DB;
+using RestfulBookerTests.Fakes;
 using RestfulBookerTests.Helpers;
 using RestfulBookerTests.Utils;
 
@@ -58,8 +60,10 @@ public sealed class TestHooks
         // ----- Clients (scoped per scenario) -----
         _container.RegisterTypeAs<BaseClient, BaseClient>();
         _container.RegisterTypeAs<BookingClient, BookingClient>();
+        _container.RegisterInstanceAs(new InMemoryDbClient());
 
         // ----- Test helpers -----
-        _container.RegisterTypeAs<BookingTestDataHelper, BookingTestDataHelper>();
+        _container.RegisterTypeAs<BookingTestDataHelper, BookingTestDataHelper>();        
+        _container.RegisterTypeAs<BookingDbHelper, BookingDbHelper>();
     }
 }

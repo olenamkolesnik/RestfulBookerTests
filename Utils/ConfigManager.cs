@@ -28,6 +28,11 @@ public class ConfigManager
     public string Username => GetEnvironmentVariable("Username");
     public string Password => GetEnvironmentVariable("Password");
 
+    //DB 
+    public string DbConnectionString => _config["Database:ConnectionString"]
+    ?? throw new InvalidOperationException("Database connection string not configured.");
+
+
     private static string GetEnvironmentVariable(string key)
     {
         var value = Environment.GetEnvironmentVariable(key);
