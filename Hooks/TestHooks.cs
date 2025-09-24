@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Reqnroll;
+﻿using Reqnroll;
 using Reqnroll.BoDi;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using RestfulBookerTests.Clients;
 using RestfulBookerTests.Configuration;
 using RestfulBookerTests.Helpers;
@@ -26,18 +26,40 @@ public sealed class TestHooks
     [BeforeScenario]
     public void BeforeScenario()
     {
-        var services = new ServiceCollection();
-        services.AddRestfulBookerServices(); // Registers BaseClient, BookingClient, LoggingHelper, ConfigManager
-        services.AddScoped<BookingTestDataHelper>();
+        // ----- Build configuration -----
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddEnvironmentVariables()
+            .Build();
 
-        var provider = services.BuildServiceProvider();
+        _container.RegisterInstanceAs<IConfiguration>(configuration);
+        _container.RegisterTypeAs<ConfigManager, ConfigManager>();        // singleton by default
+        _container.RegisterTypeAs<LoggingHelper, LoggingHelper>();
 
-        // Register DI objects to SpecFlow container
-        _container.RegisterInstanceAs(provider.GetRequiredService<ConfigManager>());
-        _container.RegisterInstanceAs(provider.GetRequiredService<LoggingHelper>());
-        _container.RegisterInstanceAs(provider.GetRequiredService<BookingClient>());
-        _container.RegisterInstanceAs(provider.GetRequiredService<BaseClient>());
-        _container.RegisterInstanceAs(provider.GetRequiredService<BookingTestDataHelper>());
-        _container.RegisterInstanceAs(provider.GetRequiredService<ILogger<BookingSteps>>());
+        // ----- Logging -----
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            var logLevel = configuration.GetValue("Api:LogLevel", "Debug");
+            if (!Enum.TryParse<LogLevel>(logLevel, true, out var level))
+                level = LogLevel.Debug;
+
+            builder.SetMinimumLevel(level);
+            builder.AddConsole();
+        });
+
+        // Register factory and typed loggers you need
+        _container.RegisterInstanceAs(loggerFactory);
+        _container.RegisterInstanceAs(loggerFactory.CreateLogger<BookingSteps>());
+        _container.RegisterInstanceAs(loggerFactory.CreateLogger<BookingClient>());
+        _container.RegisterInstanceAs(loggerFactory.CreateLogger<BaseClient>());
+
+
+        // ----- Clients (scoped per scenario) -----
+        _container.RegisterTypeAs<BaseClient, BaseClient>();
+        _container.RegisterTypeAs<BookingClient, BookingClient>();
+
+        // ----- Test helpers -----
+        _container.RegisterTypeAs<BookingTestDataHelper, BookingTestDataHelper>();
     }
 }
