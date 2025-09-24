@@ -26,7 +26,6 @@ It follows a **Behavior-Driven Development (BDD)** approach to ensure readable a
 ✔ **API Test Automation** for Restful Booker API  
 ✔ **BDD Style Scenarios** using Reqnroll (`.feature` files)  
 ✔ **Configurable via appsettings.json & .env**  
-✔ **Retry Policies** with **Polly**  
 ✔ **Allure Reporting** with GitHub Pages integration  
 ✔ **Secrets Management** for credentials via GitHub Secrets  
 ✔ **CI/CD Pipeline** with GitHub Actions  
@@ -41,6 +40,10 @@ RestfulBookerTests/
 ├── Hooks/ # Test lifecycle hooks
 ├── Models/ # Request/Response models
 ├── TestData/ # Test data files
+├── Clients/ # API client classes (BaseClient, BookingClient)
+├── DB/ # Database clients (DbClient, InMemoryDbClient)
+├── Extensions/ # ScenarioContext extensions
+├── Helpers/ # Assertion, logging, JSON, schema helpers
 ├── appsettings.json # App configuration
 ├── .env # Local environment variables
 └── allureConfig.json # Allure configuration
@@ -54,7 +57,6 @@ RestfulBookerTests/
 - **Testing Framework:** NUnit
 - **BDD Tool:** Reqnroll
 - **HTTP Client:** RestSharp
-- **Resilience:** Polly
 - **Reporting:** Allure
 - **CI/CD:** GitHub Actions
 
@@ -67,6 +69,7 @@ RestfulBookerTests/
 - Install **Reqnroll CLI**  
   ```bash
   dotnet tool install --global Reqnroll.Tools
+  ```
 
 ### ✅ Clone the Repository
 git clone https://github.com/olenamkolesnik/RestfulBookerTests.git
@@ -148,15 +151,15 @@ public class BookingSteps
     [Given(@"I have a valid booking payload")]
     public void GivenIHaveAValidBookingPayload()
     {
-        var booking = new
-        {
-            firstname = "John",
-            lastname = "Doe",
-            totalprice = 150,
-            depositpaid = true,
-            bookingdates = new { checkin = "2025-09-01", checkout = "2025-09-10" }
-        };
-        _context["payload"] = booking;
+       var booking = new Booking
+      {
+          Firstname = "John",
+          Lastname = "Doe",
+          Totalprice = 150,
+          Depositpaid = true,
+          Bookingdates = new BookingDates { Checkin = "2025-09-01", Checkout = "2025-09-10" }
+      };
+      _context.SetData(ScenarioKeys.CurrentBooking, booking);
     }
 
     [When(@"I send a POST request to create a booking")]
@@ -164,7 +167,7 @@ public class BookingSteps
     {
         var client = new RestClient("https://restful-booker.herokuapp.com/");
         var request = new RestRequest("booking", Method.Post);
-        request.AddJsonBody(_context["payload"]);
+        request.AddJsonBody(_context.GetData<Booking>(ScenarioKeys.CurrentBooking));
         _response = await client.ExecuteAsync(request);
     }
 
